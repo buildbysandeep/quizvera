@@ -103,4 +103,6 @@ Pull requests welcome. Report issues. Improve features.
 
 ## 📄 License
 
-Currently not assigned.
+This project is proprietary.
+You may view the code for educational purposes only.
+You may NOT use, copy, modify, or distribute this code without permission.

@@ -13,13 +13,13 @@ const StrictMode = ({
     <div>
       <div className="flex items-center space-x-2">
         <Switch
-          id="translation"
+          id="strict-mode"
           checked={isStrictMode}
           onCheckedChange={(checked) => {
             setIsStrictMode(checked);
           }}
         />
-        <Label htmlFor="translation">Enable Strict Mode</Label>
+        <Label htmlFor="strict-mode">Enable Strict Mode</Label>
       </div>
       <p className="text-sm text-muted-foreground">
         {isStrictMode

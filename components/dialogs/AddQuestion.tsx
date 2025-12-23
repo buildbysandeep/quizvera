@@ -8,7 +8,7 @@ import { Textarea } from "../ui/textarea";
 import { error, success, translateTextApi } from "@/lib/utils";
 import { addQuestionDB } from "@/lib/actions/quiz.actions";
 import { IQuiz } from "@/types";
-import { Loader2 } from "lucide-react";
+import { Loader2, PlusIcon } from "lucide-react";
 import { ReloadIcon } from "@radix-ui/react-icons";
 
 const AddQuestion = ({
@@ -51,7 +51,7 @@ const AddQuestion = ({
 
     // add question
     setLoading(true);
-    console.log(options);
+    // console.log(options);
     const res = await addQuestionDB({ title, translatedTitle, options, answer, quizId });
     setLoading(false);
     if (!res.ok) return error(res.error!);
@@ -182,8 +182,8 @@ const AddQuestion = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-fit px-2 leading-3" size="sm">
-          + Add Question
+        <Button className="w-fit px-2 leading-3 group" size="sm">
+          <PlusIcon className="mr-2 h-4 w-4 group-hover:rotate-180 duration-500" /> Add Question
         </Button>
       </DialogTrigger>
       <DialogDescription className="sr-only">Add Question</DialogDescription>

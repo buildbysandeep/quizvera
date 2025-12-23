@@ -119,9 +119,11 @@ const Page = ({ searchParams }: { searchParams: { group: string } }) => {
     <div className="grid grid-cols-1 gap-4">
       <div className="flex justify-between gap-2 w-full">
         <ImageUplaod type="left" setImages={setImages} images={images} />
-        <div className="bg-muted h-fit w-fit max-w-[55%] rounded-b-md px-2 py-1 title-shadow">
-          <h1 className="text-sm xs:text-xl md:text-2xl lg:text-3xl font-medium text-center line-clamp-2">{quizName}</h1>
-        </div>
+        {quizName && (
+          <div className="bg-muted h-fit w-fit max-w-[55%] rounded-b-md px-2 py-1 title-shadow">
+            <h1 className="text-sm xs:text-xl md:text-2xl lg:text-3xl font-medium text-center line-clamp-2">{quizName}</h1>
+          </div>
+        )}
         <ImageUplaod type="right" setImages={setImages} images={images} />
       </div>
 

@@ -29,7 +29,7 @@ const FotgotPasswordForm = () => {
       const { token, hashToken } = generateResetPasswordToken();
 
       const resetUrl = `${
-        process.env.NODE_ENV === "development" ? "http://localhost:3001" : process.env.NEXT_PUBLIC_APP_URL
+        process.env.NODE_ENV === "development" ? process.env.NEXT_PUBLIC_LOCAL_URL : process.env.NEXT_PUBLIC_APP_URL
       }/reset-password?token=${token}&email=${email}`;
       const template = forgotPasswordTemplate(resetUrl, process.env.SENDER_NAME || "Quiz App");
 
@@ -37,14 +37,14 @@ const FotgotPasswordForm = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          to: [email],
+          to: [{ name: "User", address: email }],
           subject: "Password Reset",
           body: { html: template },
         }),
       }).then((res) => res.json());
 
       if (!res.ok || !res?.data?.accepted.includes(email)) {
-        return { ok: false, error: "Failed to send email" };
+        return error("Failed to send reset email. Please try again later.");
       }
 
       const { ok, error: dbError } = await saveResetTokenDB({ email, token: hashToken });

@@ -20,14 +20,14 @@ enum Role {
 }
 
 model User {
-  id          String  @id @default(auto()) @map("_id") @db.ObjectId
-  name        String?
-  email       String  @unique
-  phone       String?
-  password    String
-  googleId    String?
-  role        Role[]  @default([USER])
-  isOnBoarded Boolean @default(false)
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  name         String?
+  email        String  @unique
+  phone        String?
+  passwordHash String?
+  googleId     String?
+  role         Role[]  @default([USER])
+  isOnBoarded  Boolean @default(false)
 
   resetToken       String?
   resetTokenExpiry DateTime?
@@ -35,8 +35,7 @@ model User {
   quizzes QuizParticipant[] // student quizzes
   // requests Request[] // student requests to join quiz
 
-  adminOf  Group[]       @relation("GroupAdmin")
-  memberOf GroupMember[]
+  adminOf Group[] @relation("GroupAdmin")
 
   @@map("users")
 }
@@ -46,27 +45,14 @@ model Group {
   name String
   desc String
 
-  quizzes Quiz[]        @relation("GroupQuizzes")
-  adminId String        @db.ObjectId
-  admin   User          @relation("GroupAdmin", fields: [adminId], references: [id])
-  members GroupMember[]
+  quizzes Quiz[] @relation("GroupQuizzes")
+  adminId String @db.ObjectId
+  admin   User   @relation("GroupAdmin", fields: [adminId], references: [id])
 
   QuizParticipants QuizParticipant[]
 
   @@unique([adminId, name])
   @@map("groups")
-}
-
-model GroupMember {
-  id      String @id @default(auto()) @map("_id") @db.ObjectId
-  userId  String @db.ObjectId
-  groupId String @db.ObjectId
-
-  Group Group @relation(fields: [groupId], references: [id])
-  User  User  @relation(fields: [userId], references: [id])
-
-  @@unique([userId, groupId])
-  @@map("group_members")
 }
 
 model QuizParticipant {

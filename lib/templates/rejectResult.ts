@@ -1,0 +1,154 @@
+export const rejectResultWithNote = ({
+  name,
+  email,
+  totalQuestions,
+  attemptedQuestions,
+  correctAnswers,
+}: {
+  name: string;
+  email: string;
+  totalQuestions: number;
+  attemptedQuestions: number;
+  correctAnswers: number;
+}) => {
+  return `<!DOCTYPE html>
+<html>
+  <head>
+    <title>Quiz Results - Keep Improving!</title>
+  </head>
+  <body style="background-color: #f3f4f6; font-family: Arial, sans-serif; margin: 0; padding: 0">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td align="center">
+          <table
+            role="presentation"
+            width="600"
+            cellspacing="0"
+            cellpadding="20"
+            border="0"
+            style="background-color: white; border-radius: 10px; margin: 10px"
+          >
+            <!-- Header Section -->
+            <tr>
+              <td align="center">
+                <h2 style="color: #ef4444">⚠️ Quiz Results - Level 1</h2>
+                <p style="color: #374151">
+                  We appreciate your participation in the quiz. Unfortunately, your score is below 30%, which means you are
+                  not eligible for Level 2.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Result Summary Table -->
+            <tr>
+              <td>
+                <table
+                  width="100%"
+                  cellspacing="0"
+                  cellpadding="10"
+                  border="1"
+                  style="border-collapse: collapse; width: 100%; text-align: left"
+                >
+                  <tr style="background-color: #ef4444; color: white">
+                    <th style="padding: 10px">Total Questions</th>
+                    <th style="padding: 10px">Attempted Questions</th>
+                    <th style="padding: 10px">Correct Answers</th>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px; color: #374151">${totalQuestions}</td>
+                    <td style="padding: 10px; color: #374151">${attemptedQuestions}</td>
+                    <td style="padding: 10px; color: #374151">${correctAnswers}</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Encouragement Section -->
+            <tr>
+              <td>
+                <h3 style="color: #f59e0b">📖 Keep Learning & Improving</h3>
+                <p style="color: #374151">
+                  Don't be discouraged! Learning is a journey, and every attempt helps you improve. Here are some steps you
+                  can take to prepare for future quizzes:
+                </p>
+                <ul style="color: #374151; padding-left: 20px">
+                  <li>📝 Practice with sample questions to improve accuracy.</li>
+                  <li>🎯 Join our training sessions to enhance your skills.</li>
+                  <li>
+                    ✅ You are still eligible for a scholarship of up to 20% as part of our <b>Institute's Holi Offer</b>.
+                  </li>
+                </ul>
+              </td>
+            </tr>
+
+            <!-- Call to Action -->
+            <!-- <tr>
+              <td align="center">
+                <a
+                  href="#"
+                  style="
+                    display: inline-block;
+                    background-color: #f59e0b;
+                    color: white;
+                    padding: 10px 20px;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    font-size: 16px;
+                  "
+                  >Improve Your Skills</a
+                >
+              </td>
+            </tr> -->
+
+            <!-- Contact Information -->
+            <tr>
+              <td align="center">
+                <h3 style="color: #10b981">📍 Our Location</h3>
+                <p style="color: #374151; font-size: 14px">
+                  A-1, Deendayal Nagar Phase-1, Kanth Road near Sugandh Sweet, Moradabad
+                  <br />
+                  <br />
+                  📞 Phone:
+                  <a href="tel:+917906528421" style="color: #10b981; text-decoration: none">+91-7906528421</a>
+                </p>
+              </td>
+            </tr>
+
+            <!-- Social Media Links -->
+            <tr>
+              <td align="center">
+                <h3 style="color: #10b981">Follow Us</h3>
+                <p>
+                  <a href="https://facebook.com" style="margin: 0 10px"
+                    ><img src="https://img.icons8.com/color/30/facebook.png" alt="Facebook"
+                  /></a>
+                  <a href="https://twitter.com" style="margin: 0 10px"
+                    ><img src="https://img.icons8.com/color/30/twitter.png" alt="Twitter"
+                  /></a>
+                  <a href="https://instagram.com" style="margin: 0 10px"
+                    ><img src="https://img.icons8.com/color/30/instagram-new.png" alt="Instagram"
+                  /></a>
+                  <a href="https://linkedin.com" style="margin: 0 10px"
+                    ><img src="https://img.icons8.com/color/30/linkedin.png" alt="LinkedIn"
+                  /></a>
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td align="center" style="padding-top: 20px">
+                <p style="color: #4b5563; font-size: 14px">
+                  Never stop learning! Keep practicing, and we look forward to seeing you in the next opportunity. 🚀
+                </p>
+                <p style="color: #4b5563; font-size: 12px">&copy; 2025 Excelling Technologies. All rights reserved.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+`;
+};

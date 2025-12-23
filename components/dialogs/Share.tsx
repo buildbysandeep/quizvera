@@ -32,7 +32,8 @@ export function PublishQuiz({
   const [generated, setGenerated] = React.useState(false);
   const [unlinked, setUnlinked] = React.useState(false);
 
-  const app_url = process.env.NODE_ENV === "production" ? process.env.NEXT_PUBLIC_APP_URL : "http://localhost:3020";
+  const app_url =
+    process.env.NODE_ENV === "production" ? process.env.NEXT_PUBLIC_APP_URL : process.env.NEXT_PUBLIC_LOCAL_URL;
 
   const stopSharing = async () => {
     setUnlinked(true);

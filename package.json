@@ -2,14 +2,18 @@
   "name": "admin",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev -p 3020",
     "build": "prisma generate && next build",
-    "start": "next start -p 3020",
+    "start": "next start",
     "lint": "next lint",
-    "prisma": "npx prisma generate && npx prisma db push"
+    "prisma": "npx prisma generate && npx prisma db push",
+    "seed": "node --loader ts-node/esm prisma/seed.mjs",
+    "reset": "prisma migrate reset"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.0",
     "@prisma/client": "^5.20.0",
     "@radix-ui/react-accordion": "^1.2.1",
     "@radix-ui/react-aspect-ratio": "^1.1.0",
@@ -54,7 +58,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.7",
-    "@types/node": "^20",
+    "@types/node": "^20.16.11",
     "@types/nodemailer": "^6.4.16",
     "@types/react": "^18",
     "@types/react-dom": "^18",
@@ -63,6 +67,7 @@
     "postcss": "^8",
     "react-icons": "^5.3.0",
     "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

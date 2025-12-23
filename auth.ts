@@ -2,7 +2,7 @@ import NextAuth, { NextAuthConfig, Session } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { AdapterSession, AdapterUser } from "next-auth/adapters";
-import { handleCredentialsSignIn, handleGoogleSignIn } from "./lib/auth";
+import { handleCredentialsSignIn, handleGoogleSignIn } from "./lib/auth.helpers";
 
 export const authOptions: NextAuthConfig = {
   session: {
@@ -46,7 +46,6 @@ export const authOptions: NextAuthConfig = {
       return true;
     },
     session: ({ session, token }) => {
-      // console.log("session callback called", { session, token });
       return {
         ...session,
         user: {
@@ -60,7 +59,6 @@ export const authOptions: NextAuthConfig = {
         Session;
     },
     jwt: ({ token, user }) => {
-      // console.log("jwt callback called", { token, user });
       if (user) {
         let u = user as IUser;
         return { ...token, id: u.id, isOnBoarded: u.isOnBoarded };

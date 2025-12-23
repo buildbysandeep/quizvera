@@ -21,7 +21,7 @@ export const userRegDB = async ({
         name,
         email,
         phone,
-        password: hashPassword(phone),
+        passwordHash: hashPassword(phone),
       },
       update: {
         name,
@@ -215,7 +215,7 @@ export const verifyAndResetPasswordDB = async ({
 
     await prisma.user.update({
       where: { email },
-      data: { password: hashPassword(password), resetToken: "", resetTokenExpiry: null },
+      data: { passwordHash: hashPassword(password), resetToken: null, resetTokenExpiry: null },
     });
 
     return { ok: true, message: "Token verified successfully" };

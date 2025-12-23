@@ -1,10 +1,12 @@
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "../components/ui/use-toast.ts";
 import { clsx, type ClassValue } from "clsx";
 import { ReactElement } from "react";
 import { twMerge } from "tailwind-merge";
-import { compareSync, hashSync } from "bcryptjs";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+
+const { compareSync, hashSync } = bcrypt;
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

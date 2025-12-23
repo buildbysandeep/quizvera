@@ -15,7 +15,6 @@ export const handleGoogleSignIn = async ({ profile }: any) => {
       data: {
         name: profile?.name!,
         email: profile?.email!,
-        password: "",
         googleId: profile?.sub!,
         isOnBoarded: true,
       },
@@ -40,7 +39,17 @@ export const handleCredentialsSignIn = async ({ email, password }: { email: stri
     return null;
   }
 
-  if (!comparePassword(password, user.password)) {
+  if (user.googleId) {
+    console.log("user registered with google");
+    return null;
+  }
+
+  if (!user.passwordHash) {
+    console.log("user not registered with password");
+    return null;
+  }
+
+  if (!comparePassword(password, user.passwordHash)) {
     console.log("password mismatch");
     return null;
   }

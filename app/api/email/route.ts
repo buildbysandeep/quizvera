@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
 
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT) || 587, // Ensure port is a number
-      secure: false, // Use `true` for port 465
+      port: Number(process.env.EMAIL_PORT),
+      secure: process.env.EMAIL_PORT === "465",
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     });
 
     const mailOptions = {
-      from: `"${process.env.EMAIL_USERNAME}" <${process.env.EMAIL_USER}>`,
+      from: `"${process.env.SENDER_NAME}" <${process.env.SENDER_ADDRESS}>`,
       to: to.map((recipient) => `${recipient.name} <${recipient.address}>`),
       subject,
       text: body.text || "", // Ensure text fallback
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       data: info,
     });
   } catch (error: any) {
-    console.error("Email Sending Error:", error.message);
+    console.error("Email Sending Error:", error);
     return NextResponse.json({ ok: false, error: error.message || "Something went wrong" }, { status: 500 });
   }
 }

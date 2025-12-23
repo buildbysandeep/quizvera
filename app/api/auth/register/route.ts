@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
         data: {
           name,
           email,
-          password: hashPassword(password),
+          passwordHash: hashPassword(password),
           isOnBoarded: true,
         },
       });

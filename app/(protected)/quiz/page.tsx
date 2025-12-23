@@ -27,6 +27,8 @@ import { ArrowDown, ArrowUp, CalendarDays, CheckCircle, ChevronDown, Download, L
 import { convertJsonToCsv, downloadFile } from "@/lib/download";
 import { SiGmail } from "react-icons/si";
 import { successResultWithNote } from "@/lib/templates/success-result-with-note";
+import { rejectResultWithNote } from "@/lib/templates/rejectResult";
+import GenerateQuestions from "@/components/dialogs/GenerateQuestions";
 
 const Page = ({ searchParams }: { searchParams: { id: string } }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -90,12 +92,17 @@ const Page = ({ searchParams }: { searchParams: { id: string } }) => {
           <QuizInfo duration={data.duration} maxMarks={data.maxMarks} editable />
           <QuizDesc desc={data.desc} editable />
 
-          <AddQuestion
-            quizId={data.id}
-            data={data}
-            setData={setData}
-            translate={{ enable: data.translationEnabled, source: data.sourceLanguage, target: data.targetLanguage }}
-          />
+          <div className="flex gap-2">
+            <GenerateQuestions quizId={data.id} />
+
+            <AddQuestion
+              quizId={data.id}
+              data={data}
+              setData={setData}
+              translate={{ enable: data.translationEnabled, source: data.sourceLanguage, target: data.targetLanguage }}
+            />
+          </div>
+
           <QuizQuestions questions={data.questions} data={data} setData={setData} />
 
           <QuizFooter
@@ -467,9 +474,10 @@ const Participant = ({
 
       const emailBody = {
         to: [{ name, address: email }],
-        subject: "Congratulations! You Have Qualified for Level 2 at Excelling Technologies",
+        // subject: "Congratulations! You Have Qualified for Level 2 at Excelling Technologies",
+        subject: "Your Quiz Results – Keep Learning & Claim Your Scholarship!",
         body: {
-          html: successResultWithNote({
+          html: rejectResultWithNote({
             name,
             email,
             totalQuestions: questions.length,
@@ -492,7 +500,7 @@ const Participant = ({
         return error(response.error);
       }
 
-      cb(date, data.id, "sentEmailId", response.data.messageId || "");
+      // cb(date, data.id, "sentEmailId", response.data.messageId || "");
       success("Email sent successfully");
     } catch (err) {
       console.error(err);
@@ -558,9 +566,8 @@ const Participant = ({
               {isDownloading ? "Downloading..." : "Download PDF"}
             </Button>
 
-            {data.sentEmailId ? (
+            {/* {data.sentEmailId ? (
               <div>
-                {/* <span className="text-sm text-green-600">Email Sent</span> */}
                 <Button
                   variant={"secondary"}
                   size={"sm"}
@@ -575,7 +582,7 @@ const Participant = ({
               <Button size={"sm"} className="ml-2" onClick={handleSendEmail} disabled={isSendingEmail}>
                 <SiGmail className="mr-2 h-4 w-4" /> {isSendingEmail ? "Sending..." : "Send Email"}
               </Button>
-            )}
+            )} */}
           </div>
 
           <div className={`${showResult ? "block" : "hidden"} max-h-[300px] overflow-y-scroll mt-3`}>

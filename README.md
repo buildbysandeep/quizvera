@@ -93,11 +93,11 @@ Add your credentials inside `.env` – refer to `.env.example` for structure.
 - Quiz-wise metrics
 - Leaderboards & rankings
 
----
+<!-- ---
 
 ## 🤝 Contribute
 
-Pull requests welcome. Report issues. Improve features.
+Pull requests welcome. Report issues. Improve features. -->
 
 ---
 

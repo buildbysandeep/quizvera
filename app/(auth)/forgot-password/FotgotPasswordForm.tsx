@@ -28,9 +28,7 @@ const FotgotPasswordForm = () => {
 
       const { token, hashToken } = generateResetPasswordToken();
 
-      const resetUrl = `${
-        process.env.NODE_ENV === "development" ? process.env.NEXT_PUBLIC_LOCAL_URL : process.env.NEXT_PUBLIC_APP_URL
-      }/reset-password?token=${token}&email=${email}`;
+      const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}&email=${email}`;
       const template = forgotPasswordTemplate(resetUrl, process.env.SENDER_NAME || "Quiz App");
 
       const res = await fetch("/api/email", {

@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.0",
-    "@netlify/next": "^1.4.9",
     "@prisma/client": "^5.20.0",
     "@radix-ui/react-accordion": "^1.2.1",
     "@radix-ui/react-aspect-ratio": "^1.1.0",
@@ -57,6 +56,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@netlify/plugin-nextjs": "^5.15.3",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^20.16.11",

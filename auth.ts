@@ -38,6 +38,17 @@ export const authOptions: NextAuthConfig = {
     signIn: "/sign-in",
     error: "/sign-in",
   },
+  cookies: {
+    sessionToken: {
+      name: `__Secure-authjs.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: true,
+      },
+    },
+  },
   callbacks: {
     async signIn({ account, profile }) {
       if (account?.provider === "google") {

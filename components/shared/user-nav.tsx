@@ -52,7 +52,7 @@ export function UserNav({ session }: { session: Session }) {
         <DropdownMenuItem
           onClick={() => {
             signOut({
-              redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/sign-in`,
+              redirectTo: "/",
             });
           }}
           className="cursor-pointer"

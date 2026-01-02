@@ -7,8 +7,8 @@ import Image from "next/image";
 import background from "@/app/assets/quiz.webp";
 
 export const metadata: Metadata = {
-  title: "Quiz App",
-  description: "Quiz App",
+  title: "Quizvera",
+  description: "Quizvera",
 };
 
 export default function RootLayout({
@@ -26,15 +26,15 @@ export default function RootLayout({
             <div className="absolute inset-0 bg-zinc-900" />
             <div className="relative z-20 flex items-center text-lg font-medium">
               <SiPlatformdotsh className="mr-5" />
-              SaaS Quiz
+              Quizvera
             </div>
             <div className="opacity-20 w-full h-full flex py-5">
-              <Image src={background} alt="Quiz App" width={0} height={0} sizes="100vw" className="w-full object-cover" />
+              <Image src={background} alt="Quizvera" width={0} height={0} sizes="100vw" className="w-full object-cover" />
             </div>
             <div className="relative z-20 mt-auto">
               <blockquote className="space-y-2">
                 <p className="text-lg">
-                  &ldquo;SaaS Quiz is your go-to platform for creating, managing, and taking quizzes with ease. Designed for
+                  &ldquo;Quizvera is your go-to platform for creating, managing, and taking quizzes with ease. Designed for
                   flexibility, our system supports everything from academic assessments to corporate training, ensuring a
                   seamless experience across industries.&rdquo;
                 </p>

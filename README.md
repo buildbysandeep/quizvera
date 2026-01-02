@@ -6,7 +6,7 @@ A fast, scalable, and anti-cheat enabled quiz platform built for schools, colleg
 
 ### 🌐 Live Demo
 
-[https://saas-quiz.netlify.app/](https://saas-quiz.netlify.app/)
+[https://quizvera.onrender.com//](https://quizvera.onrender.com//)
 
 ---
 

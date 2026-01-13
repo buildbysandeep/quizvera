@@ -94,8 +94,8 @@ export function QuizSubmit({
           <Button type="button" variant="secondary" size={"sm"} onClick={() => setOpen(false)}>
             No
           </Button>
-          <Button size={"sm"} onClick={submitHandler}>
-            Submit
+          <Button size={"sm"} onClick={submitHandler} disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit"}
           </Button>
         </DialogFooter>
       </DialogContent>

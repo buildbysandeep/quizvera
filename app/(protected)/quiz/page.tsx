@@ -23,7 +23,17 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import Loading from "@/components/shared/Loading";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ArrowDown, ArrowUp, CalendarDays, CheckCircle, ChevronDown, Download, Loader2, XCircle } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  CalendarDays,
+  CheckCircle,
+  ChevronDown,
+  CopyIcon,
+  Download,
+  Loader2,
+  XCircle,
+} from "lucide-react";
 import { convertJsonToCsv, downloadFile } from "@/lib/download";
 import { SiGmail } from "react-icons/si";
 import { successResultWithNote } from "@/lib/templates/success-result-with-note";
@@ -33,6 +43,8 @@ import GenerateQuestions from "@/components/dialogs/GenerateQuestions";
 const Page = ({ searchParams }: { searchParams: { id: string } }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<IQuiz | null>(null);
+
+  const app_url = process.env.NEXT_PUBLIC_APP_URL;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -85,7 +97,21 @@ const Page = ({ searchParams }: { searchParams: { id: string } }) => {
             </div>
           </div>
 
-          <PublishQuiz id={data.id} isPublished={data.published} setData={setData} />
+          <div className="flex items-center gap-2">
+            <PublishQuiz id={data.id} isPublished={data.published} setData={setData} />
+            <Button
+              type="submit"
+              size="sm"
+              className="px-3"
+              onClick={() => {
+                navigator.clipboard.writeText(app_url + "/share/quiz/" + data.id);
+                success("Link copied to clipboard");
+              }}
+            >
+              <span className="sr-only">Copy</span>
+              <CopyIcon className="h-4 w-4" />
+            </Button>
+          </div>
 
           <QuizHeader title={data.title} images={data.images || []} editable />
           <UserInputs inputs={data.userInputs} editable />

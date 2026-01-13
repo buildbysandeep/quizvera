@@ -77,20 +77,6 @@ export function PublishQuiz({
               <ReloadIcon className="h-4 w-4 animate-spin" />
             )}
           </div>
-          <Button
-            type="submit"
-            size="sm"
-            className="px-3"
-            disabled={generated}
-            onClick={() => {
-              navigator.clipboard.writeText(app_url + "/share/quiz/" + id);
-              success("Link copied to clipboard");
-              setOpen(false);
-            }}
-          >
-            <span className="sr-only">Copy</span>
-            <CopyIcon className="h-4 w-4" />
-          </Button>
         </div>
         <DialogFooter className="flex flex-row items-center justify-between">
           <DialogClose asChild>

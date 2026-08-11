@@ -40,3 +40,5 @@ next-env.d.ts
 # prisma
 /prisma/seed.mjs
 /prisma/truncate.ts
+
+.vscode

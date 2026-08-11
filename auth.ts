@@ -2,7 +2,7 @@ import NextAuth, { NextAuthConfig, Session } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { AdapterSession, AdapterUser } from "next-auth/adapters";
-import { handleCredentialsSignIn, handleGoogleSignIn } from "./lib/auth.helpers";
+import { handleCredentialsSignIn, handleFindUser, handleGoogleSignIn } from "./lib/auth.helpers";
 
 export const authOptions: NextAuthConfig = {
   session: {
@@ -69,10 +69,21 @@ export const authOptions: NextAuthConfig = {
       } & AdapterSession &
         Session;
     },
-    jwt: ({ token, user }) => {
-      if (user) {
-        let u = user as IUser;
-        return { ...token, id: u.id, isOnBoarded: u.isOnBoarded };
+    jwt: async ({ token, user, account }) => {
+      if (account?.provider === "google") {
+        const dbUser = await handleFindUser({ email: token.email! });
+
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.isOnBoarded = dbUser.isOnBoarded;
+        }
+      }
+
+      if (user && account?.provider === "credentials") {
+        const u = user as IUser;
+
+        token.id = u.id;
+        token.isOnBoarded = u.isOnBoarded;
       }
       return token;
     },

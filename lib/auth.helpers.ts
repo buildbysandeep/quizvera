@@ -56,3 +56,9 @@ export const handleCredentialsSignIn = async ({ email, password }: { email: stri
 
   return { id: user.id, email: user.email, name: user.name, role: user.role, isOnBoarded: user.isOnBoarded };
 };
+
+export const handleFindUser = async ({ email }: { email: string }) => {
+  return await prisma.user.findUnique({
+    where: { email },
+  });
+};

@@ -253,7 +253,7 @@ const QuizParticipants = ({
           phone: data.User.phone,
           correctAnswers: data.Answers.reduce(
             (acc, answer) => (answer.answer === answer.Question?.answer ? acc + 1 : acc),
-            0
+            0,
           ),
           totalQuestions: data.Answers.length,
         };
@@ -286,7 +286,7 @@ const QuizParticipants = ({
 
         return [...acc, { id: participant.id, answers: correct }];
       },
-      []
+      [],
     );
 
     // sort by correct answers
@@ -295,7 +295,7 @@ const QuizParticipants = ({
     const updatedParticipants = sortedData.map((participant: { id: string; answers: number }, index: number) => {
       const updatedParticipant = { ...shortedParticipants.find((p) => p.id === participant.id) };
       updatedParticipant.percentile = (((sortedData.length - (index + 1)) / (shortedParticipants.length - 1)) * 100).toFixed(
-        2
+        2,
       );
       return updatedParticipant;
     });
@@ -442,15 +442,18 @@ const Participant = ({
     setResults(res);
   }, [data]);
 
-  const userInfoRef = useRef();
-  const contentRef = useRef();
+  const userInfoRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
   const handleDownloadPdf = async () => {
-    if (contentRef.current) {
-      // Extract the HTML content of the element
-      // @ts-ignore
+    if (!contentRef.current || !userInfoRef.current) {
+      return;
+    }
+
+    setIsDownloading(true);
+
+    try {
       const userInfoHtml = userInfoRef.current.innerHTML;
-      // @ts-ignore
       const elementHtml = contentRef.current.innerHTML;
 
       const htmlContent = `
@@ -459,7 +462,7 @@ const Participant = ({
           <script src="https://cdn.tailwindcss.com"></script>
         </head>
         <body>
-          <h1 class="text-3xl mb-1">Hello, ${data.User.name}</h1>
+          <h1 class="text-3xl mb-1">${data.User.name}</h1>
           ${userInfoHtml}
           <h1 class="text-xl mt-5">Results</h1>
           ${elementHtml}
@@ -467,7 +470,6 @@ const Participant = ({
       </html>
     `;
 
-      setIsDownloading(true);
       const response = await fetch("/api/pdf", {
         method: "POST",
         headers: {
@@ -476,18 +478,23 @@ const Participant = ({
         body: JSON.stringify({ html: htmlContent }),
       });
 
-      if (response.ok) {
-        // Create a link to download the PDF
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${data.User.name}.pdf`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      } else {
-        console.error("Failed to generate PDF");
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
       }
+
+      // Create a link to download the PDF
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${data.User.name}.pdf`;
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("PDF download failed:", error);
+    } finally {
       setIsDownloading(false);
     }
   };

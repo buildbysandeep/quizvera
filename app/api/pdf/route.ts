@@ -1,7 +1,13 @@
 import { NextRequest } from "next/server";
 import puppeteer from "puppeteer";
+import puppeteerCore from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
+
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  let browser: Awaited<ReturnType<typeof puppeteer.launch>> | Awaited<ReturnType<typeof puppeteerCore.launch>> | undefined;
+
   try {
     const { html } = await req.json();
 
@@ -13,14 +19,27 @@ export async function POST(req: NextRequest) {
     }
 
     // Launch Puppeteer
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"], // Important for server environments like Vercel
-    });
+    const isProduction = process.env.NODE_ENV === "production";
+
+    if (isProduction) {
+      browser = await puppeteerCore.launch({
+        args: chromium.args,
+        // defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: true,
+      });
+    } else {
+      browser = await puppeteer.launch({
+        headless: true,
+      });
+    }
+
     const page = await browser.newPage();
 
     // Set the content for Puppeteer
-    await page.setContent(html);
+    await page.setContent(html, {
+      waitUntil: "domcontentloaded",
+    });
 
     // Generate the PDF
     const pdfBuffer = await page.pdf({
@@ -34,11 +53,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Close the browser
-    await browser.close();
-
     // Create a custom response with the PDF
-    return new Response(pdfBuffer, {
+    const pdfBody = new Uint8Array(pdfBuffer.byteLength);
+    pdfBody.set(pdfBuffer);
+
+    return new Response(pdfBody.buffer as ArrayBuffer, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=generated.pdf",
@@ -52,5 +71,9 @@ export async function POST(req: NextRequest) {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
 }

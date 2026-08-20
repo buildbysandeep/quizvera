@@ -1,7 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
+    serverComponentsExternalPackages: ["@sparticuz/chromium"],
+  },
+
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push({
+        "@sparticuz/chromium": "commonjs @sparticuz/chromium",
+      });
+    }
+
+    return config;
   },
   typescript: {
     ignoreBuildErrors: true,

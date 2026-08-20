@@ -19,12 +19,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Launch Puppeteer
-    const isProduction = process.env.NODE_ENV === "production";
+    const isVercel = process.env.VERCEL === "1";
 
-    if (isProduction) {
+    console.log(isVercel ? "on vercel" : "no vercel");
+
+    if (isVercel) {
       browser = await puppeteerCore.launch({
         args: chromium.args,
-        // defaultViewport: chromium.defaultViewport,
         executablePath: await chromium.executablePath(),
         headless: true,
       });

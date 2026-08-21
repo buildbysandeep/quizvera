@@ -16,6 +16,12 @@ import { IParticipantQuizAnswer, IUser } from "@/types";
 import { submitParticipantQuizDB } from "@/lib/actions/user.action";
 import { useRouter } from "next/navigation";
 
+const SUBMIT_TIMEOUT_MS = 15000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([promise, new Promise<T>((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), ms))]);
+}
+
 export function QuizSubmit({
   user,
   quizInputs,
@@ -44,37 +50,55 @@ export function QuizSubmit({
       return;
     }
 
-    setIsSubmitting(true);
-    const res = await submitParticipantQuizDB({
-      userId: user.id,
-      quizId,
-      groupId,
-      answers,
-      quizInputs,
-      isQualified: true,
-    });
-    setIsSubmitting(false);
-
-    if (!res.ok) {
-      if (res.redirectTo) {
-        router.replace(res.redirectTo);
-        return;
-      }
-
-      error(res.error!, 3000, true);
-      setOpen(false);
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      error("You're offline. Please check your connection and try again.", 3000, true);
       return;
     }
 
-    success("Quiz submitted successfully");
-    setOpen(false);
-    router.replace(`/share/quiz/sb?quizId=${quizId}`);
+    setIsSubmitting(true);
+
+    try {
+      const res = await withTimeout(
+        submitParticipantQuizDB({
+          userId: user.id,
+          quizId,
+          groupId,
+          answers,
+          quizInputs,
+          isQualified: true,
+        }),
+        SUBMIT_TIMEOUT_MS,
+      );
+
+      if (!res.ok) {
+        if (res.redirectTo) {
+          router.replace(res.redirectTo);
+          return;
+        }
+        error(res.error!, 3000, true);
+        setOpen(false);
+        return;
+      }
+
+      success("Quiz submitted successfully");
+      setOpen(false);
+      router.replace(`/share/quiz/sb?quizId=${quizId}`);
+    } catch (e) {
+      const message =
+        e instanceof Error && e.message === "TIMEOUT"
+          ? "Request timed out. Please check your connection and try again."
+          : "Something went wrong. Please try again.";
+      error(message, 3000, true);
+      // keep dialog open so user can retry without re-triggering the trigger button
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-fit mt-10">{isSubmitting ? "Submitting..." : "Submit Quiz"}</Button>
+        <Button className="w-fit mt-10">Submit Quiz</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -91,7 +115,7 @@ export function QuizSubmit({
           </div>
         </DialogHeader>
         <DialogFooter>
-          <Button type="button" variant="secondary" size={"sm"} onClick={() => setOpen(false)}>
+          <Button type="button" variant="secondary" size={"sm"} onClick={() => setOpen(false)} disabled={isSubmitting}>
             No
           </Button>
           <Button size={"sm"} onClick={submitHandler} disabled={isSubmitting}>

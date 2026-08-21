@@ -375,6 +375,16 @@ const QuizParticipants = ({
   );
 };
 
+interface IResult {
+  id: string;
+  title: string;
+  options: IOption[];
+  correctAnswer: string;
+  userAnswer: string | null;
+  isAttempted: boolean;
+  isCorrect: boolean;
+}
+
 const Participant = ({
   data,
   questions,
@@ -394,17 +404,7 @@ const Participant = ({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
-  const [results, setResults] = useState<
-    {
-      id: string;
-      title: string;
-      options: IOption[];
-      correctAnswer: string;
-      userAnswer: string | null;
-      isAttempted: boolean;
-      isCorrect: boolean;
-    }[]
-  >([]);
+  const [results, setResults] = useState<IResult[]>([]);
   // count correct and incorrect answers
   useEffect(() => {
     if (!data.Answers) return;
@@ -561,12 +561,12 @@ const Participant = ({
         {/* @ts-ignore */}
         <div ref={userInfoRef}>
           <div className="grid grid-cols-2 gap-1 px-4">
-            <p className="text-sm">
+            {/* <p className="text-sm">
               <span className="font-medium">Phone:</span> {data.User.phone}
             </p>
             <p className="text-sm">
               <span className="font-medium">Email:</span> {data.User.email}
-            </p>
+            </p> */}
 
             <p className="text-sm">
               <span className="font-medium">Question Answered:</span> {data.Answers.length}
@@ -622,42 +622,73 @@ const Participant = ({
             {/* @ts-ignore */}
             <div ref={contentRef} className="mx-auto max-w-[1020px]">
               {results.map((res, index) => (
-                <div
-                  key={res.id}
-                  className={`flex flex-col m-1 p-2 rounded-md ${
-                    res.isCorrect && res.isAttempted ? "bg-green-50" : res.isAttempted ? "bg-red-50" : "bg-gray-50"
-                  }`}
-                >
-                  <div className="flex gap-2 text-base font-medium">
-                    <span>{index + 1}.</span>
-                    <div>
-                      <p>{res.title}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 xs:grid-cols-2 gap-1">
-                    {res.options
-                      .sort((a, b) => a.key.localeCompare(b.key))
-                      .map((option, index) => (
-                        <div key={option.id} className="flex items-start gap-2 text-sm">
-                          <div>({option.key})</div>
-                          {res.correctAnswer === option.key && <CheckCircle className="h-4 w-4 text-green-600 mt-[3px]" />}
-                          {res.userAnswer !== res.correctAnswer && res.userAnswer === option.key && (
-                            <XCircle className="h-4 w-4 text-red-500  mt-[3px]" />
-                          )}
-                          <div className="mt-[2px]">
-                            <p className="leading-4">{option.value}</p>
-                            <p className="text-xs leading-[18px] mt-1">{option.translatedValue}</p>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
+                <Question key={index} res={res} index={index} />
               ))}
             </div>
           </div>
         </div>
       </AccordionContent>
     </AccordionItem>
+  );
+};
+
+const Question = ({ res, index }: { res: IResult; index: number }) => {
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const resize = () => {
+      el.style.height = "auto";
+      const next = el.scrollHeight;
+      if (next > 0) {
+        el.style.height = `${next}px`;
+      }
+    };
+
+    resize();
+
+    const ro = new ResizeObserver(resize);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [res.title]);
+
+  return (
+    <div
+      className={`flex flex-col m-1 p-2 rounded-md ${
+        res.isCorrect && res.isAttempted ? "bg-green-50" : res.isAttempted ? "bg-red-50" : "bg-gray-50"
+      }`}
+    >
+      <div className="flex gap-2 text-base font-medium">
+        <span>{index + 1}.</span>
+        <textarea
+          id={res.id}
+          ref={textareaRef}
+          readOnly
+          rows={1}
+          className="w-full font-medium resize-none overflow-hidden outline-none bg-inherit [field-sizing:content]"
+          value={res.title}
+        />
+      </div>
+      <div className="grid grid-cols-1 xs:grid-cols-2 gap-1">
+        {res.options
+          .sort((a, b) => a.key.localeCompare(b.key))
+          .map((option, index) => (
+            <div key={option.id} className="flex items-start gap-2 text-sm">
+              <div>({option.key})</div>
+              {res.correctAnswer === option.key && <CheckCircle className="h-4 w-4 text-green-600 mt-[3px]" />}
+              {res.userAnswer !== res.correctAnswer && res.userAnswer === option.key && (
+                <XCircle className="h-4 w-4 text-red-500  mt-[3px]" />
+              )}
+              <div className="mt-[2px]">
+                <p className="leading-4">{option.value}</p>
+                <p className="text-xs leading-[18px] mt-1">{option.translatedValue}</p>
+              </div>
+            </div>
+          ))}
+      </div>
+    </div>
   );
 };
 

@@ -4,6 +4,13 @@ const nextConfig = {
     serverComponentsExternalPackages: ["@sparticuz/chromium"],
   },
 
+  outputFileTracingIncludes: {
+    "/api/pdf": [
+      "./node_modules/@sparticuz/chromium/**/*",
+      "./node_modules/.pnpm/@sparticuz+chromium@*/node_modules/@sparticuz/chromium/**/*",
+    ],
+  },
+
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals.push({
@@ -13,6 +20,7 @@ const nextConfig = {
 
     return config;
   },
+
   typescript: {
     ignoreBuildErrors: true,
   },

@@ -19,21 +19,23 @@ export async function POST(req: NextRequest) {
     }
 
     // Launch Puppeteer
-    const isVercel = process.env.VERCEL === "1";
+    // const isVercel = process.env.VERCEL === "1";
 
-    console.log(isVercel ? "on vercel" : "no vercel");
+    // console.log(isVercel ? "on vercel" : "no vercel");
 
-    if (isVercel) {
-      browser = await puppeteerCore.launch({
-        args: chromium.args,
-        executablePath: await chromium.executablePath(),
-        headless: true,
-      });
-    } else {
-      browser = await puppeteer.launch({
-        headless: true,
-      });
-    }
+    // if (isVercel) {
+    const executablePath = await chromium.executablePath();
+
+    browser = await puppeteerCore.launch({
+      args: chromium.args,
+      executablePath,
+      headless: true,
+    });
+    // } else {
+    //   browser = await puppeteer.launch({
+    //     headless: true,
+    //   });
+    // }
 
     const page = await browser.newPage();
 

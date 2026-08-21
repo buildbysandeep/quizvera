@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import puppeteer from "puppeteer";
 import puppeteerCore from "puppeteer-core";
 import chromium from "@sparticuz/chromium-min";
 
@@ -8,7 +9,7 @@ export const maxDuration = 60;
 const CHROMIUM_PACK_URL = "https://github.com/Sparticuz/chromium/releases/download/v149.0.0/chromium-v149.0.0-pack.x64.tar";
 
 export async function POST(req: NextRequest) {
-  let browser: Awaited<ReturnType<typeof puppeteerCore.launch>> | undefined;
+  let browser: Awaited<ReturnType<typeof puppeteer.launch>> | Awaited<ReturnType<typeof puppeteerCore.launch>> | undefined;
 
   try {
     const { html } = await req.json();
@@ -21,11 +22,20 @@ export async function POST(req: NextRequest) {
 
     const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
 
-    browser = await puppeteerCore.launch({
-      args: chromium.args,
-      executablePath,
-      headless: true,
-    });
+    const isVercel = !!process.env.VERCEL;
+
+    if (isVercel) {
+      const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
+      browser = await puppeteerCore.launch({
+        args: chromium.args,
+        executablePath,
+        headless: true,
+      });
+    } else {
+      browser = await puppeteer.launch({
+        headless: true,
+      });
+    }
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "domcontentloaded" });

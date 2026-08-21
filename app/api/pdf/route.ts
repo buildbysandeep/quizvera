@@ -1,16 +1,17 @@
 import { NextRequest } from "next/server";
-import puppeteer from "puppeteer";
 import puppeteerCore from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
+import chromium from "@sparticuz/chromium-min";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
+
+const CHROMIUM_PACK_URL = "https://github.com/Sparticuz/chromium/releases/download/v149.0.0/chromium-v149.0.0-pack.tar";
 
 export async function POST(req: NextRequest) {
-  let browser: Awaited<ReturnType<typeof puppeteer.launch>> | Awaited<ReturnType<typeof puppeteerCore.launch>> | undefined;
+  let browser: Awaited<ReturnType<typeof puppeteerCore.launch>> | undefined;
 
   try {
     const { html } = await req.json();
-
     if (!html) {
       return new Response(JSON.stringify({ error: "HTML content is required" }), {
         status: 400,
@@ -18,49 +19,24 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Launch Puppeteer
-    // const isVercel = process.env.VERCEL === "1";
-
-    // console.log(isVercel ? "on vercel" : "no vercel");
-
-    // if (isVercel) {
-    const executablePath = await chromium.executablePath();
+    const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
 
     browser = await puppeteerCore.launch({
       args: chromium.args,
       executablePath,
       headless: true,
     });
-    // } else {
-    //   browser = await puppeteer.launch({
-    //     headless: true,
-    //   });
-    // }
 
     const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "domcontentloaded" });
 
-    // Set the content for Puppeteer
-    await page.setContent(html, {
-      waitUntil: "domcontentloaded",
-    });
-
-    // Generate the PDF
     const pdfBuffer = await page.pdf({
       format: "A4",
       printBackground: true,
-      margin: {
-        top: "20px",
-        bottom: "20px",
-        left: "10px",
-        right: "10px",
-      },
+      margin: { top: "20px", bottom: "20px", left: "10px", right: "10px" },
     });
 
-    // Create a custom response with the PDF
-    const pdfBody = new Uint8Array(pdfBuffer.byteLength);
-    pdfBody.set(pdfBuffer);
-
-    return new Response(pdfBody.buffer as ArrayBuffer, {
+    return new Response(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=generated.pdf",
@@ -68,15 +44,11 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error generating PDF:", error);
-
-    // Return an error response
     return new Response(JSON.stringify({ error: "Failed to generate PDF" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
   } finally {
-    if (browser) {
-      await browser.close();
-    }
+    if (browser) await browser.close();
   }
 }

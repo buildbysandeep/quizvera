@@ -1,26 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ["@sparticuz/chromium"],
-  },
-
-  outputFileTracingIncludes: {
-    "/api/pdf": [
-      "./node_modules/@sparticuz/chromium/**/*",
-      "./node_modules/.pnpm/@sparticuz+chromium@*/node_modules/@sparticuz/chromium/**/*",
-    ],
-  },
-
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      config.externals.push({
-        "@sparticuz/chromium": "commonjs @sparticuz/chromium",
-      });
-    }
-
-    return config;
-  },
-
+  serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
   typescript: {
     ignoreBuildErrors: true,
   },

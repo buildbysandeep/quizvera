@@ -10,6 +10,8 @@ import { addQuestionDB } from "@/lib/actions/quiz.actions";
 import { IQuiz } from "@/types";
 import { Loader2, PlusIcon } from "lucide-react";
 import { ReloadIcon } from "@radix-ui/react-icons";
+import { Switch } from "../ui/switch";
+import { isSupported } from "../shared/CodeBlock";
 
 const AddQuestion = ({
   quizId,
@@ -26,6 +28,9 @@ const AddQuestion = ({
   const [loading, setLoading] = React.useState(false);
   const [title, setTitle] = React.useState("");
   const [translatedTitle, setTranslatedTitle] = React.useState("");
+  const [showSnippet, setShowSnippet] = React.useState(false);
+  const [snippet, setSnippet] = React.useState("");
+  const [snippetLang, setSnippetLang] = React.useState("");
   const [translateLoading, setTranslateLoading] = React.useState(false);
   const [options, setOptions] = React.useState<{ key: string; value: string; translatedValue: string }[]>([
     { key: "a", value: "", translatedValue: "" },
@@ -49,16 +54,28 @@ const AddQuestion = ({
       return;
     }
 
+    if (showSnippet && !snippet && !snippetLang) {
+      error("Please add the snippet and snippet language");
+      return;
+    }
+
+    if (showSnippet && !isSupported(snippetLang)) {
+      error("Please select a supported snippet language");
+      return;
+    }
+
     // add question
     setLoading(true);
     // console.log(options);
-    const res = await addQuestionDB({ title, translatedTitle, options, answer, quizId });
+    const res = await addQuestionDB({ title, translatedTitle, showSnippet, snippet, snippetLang, options, answer, quizId });
     setLoading(false);
     if (!res.ok) return error(res.error!);
     setTitle("");
     setTranslatedTitle("");
     setOptions([]);
     setAnswer("");
+    setSnippet("");
+    setSnippetLang("");
 
     // update quizes
     const updatedQuestions = data ? [...data.questions, res.data] : [res.data];
@@ -82,7 +99,7 @@ const AddQuestion = ({
         return s
           .replace(
             /^(?:-?\s*[a-dA-D1-4]\)|-?\s*\([a-dA-D1-4]\)|-?\s*[a-dA-D1-4]\.|-?\s*[a-dA-D1-4]\]|\[-?\s*[a-dA-D1-4]\]|-?\s*\d\.)\s*/,
-            ""
+            "",
           )
           .trim();
       })
@@ -91,7 +108,7 @@ const AddQuestion = ({
     if (splitOptions.length === 4) {
       e.preventDefault();
       setOptions(
-        splitOptions.map((value: string, index: number) => ({ key: options[index].key, value, translatedValue: "" }))
+        splitOptions.map((value: string, index: number) => ({ key: options[index].key, value, translatedValue: "" })),
       );
     }
   };
@@ -105,7 +122,7 @@ const AddQuestion = ({
         return s
           .replace(
             /^(?:-?\s*[a-dA-D1-4]\)|-?\s*\([a-dA-D1-4]\)|-?\s*[a-dA-D1-4]\.|-?\s*[a-dA-D1-4]\]|\[-?\s*[a-dA-D1-4]\]|-?\s*\d\.)\s*/,
-            ""
+            "",
           )
           .trim();
       })
@@ -117,7 +134,7 @@ const AddQuestion = ({
       setOptions(
         splitOptions
           .slice(1, 5)
-          .map((value: string, index: number) => ({ key: options[index].key, value, translatedValue: "" }))
+          .map((value: string, index: number) => ({ key: options[index].key, value, translatedValue: "" })),
       );
     }
 
@@ -140,31 +157,64 @@ const AddQuestion = ({
       setOptions(
         splitOptions
           .slice(1, 5)
-          .map((value: string, index: number) => ({ key: options[index].key, value, translatedValue: "" }))
+          .map((value: string, index: number) => ({ key: options[index].key, value, translatedValue: "" })),
       );
     }
   };
 
   const handleTranslate = async () => {
-    if (translate.source && translate.target) {
-      setTranslateLoading(true);
-      try {
-        if (title) setTranslatedTitle(await translateTextApi(title, data?.sourceLanguage!, data?.targetLanguage!));
-        const translatedOptions = options.map(async (option) => {
-          if (option.value)
-            return {
-              ...option,
-              translatedValue: await translateTextApi(option.value, data?.sourceLanguage!, data?.targetLanguage!),
-            };
-          return option;
-        });
-        setOptions(await Promise.all(translatedOptions));
-      } catch (err: any) {
+    // if (translate.source && translate.target) {
+    setTranslateLoading(true);
+    try {
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: title,
+          o1: options[0].value,
+          o2: options[1].value,
+          o3: options[2].value,
+          o4: options[3].value,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data || data.error || !data.question || !data.options) {
         error("Translation failed");
-      } finally {
-        setTranslateLoading(false);
+        return;
       }
+
+      console.log(data);
+
+      setTranslatedTitle(data.question);
+      setOptions((prev) =>
+        prev.map((option) => {
+          const translatedOption = data.options.find((item: any) => item.key === option.key);
+
+          return {
+            ...option,
+            translatedValue: translatedOption?.value ?? "",
+          };
+        }),
+      );
+
+      // if (title) setTranslatedTitle(await translateTextApi(title, data?.sourceLanguage!, data?.targetLanguage!));
+      // const translatedOptions = options.map(async (option) => {
+      //   if (option.value)
+      //     return {
+      //       ...option,
+      //       translatedValue: await translateTextApi(option.value, data?.sourceLanguage!, data?.targetLanguage!),
+      //     };
+      //   return option;
+      // });
+      // setOptions(await Promise.all(translatedOptions));
+    } catch (err: any) {
+      error("Translation failed");
+    } finally {
+      setTranslateLoading(false);
     }
+    // }
   };
 
   const handleClear = () => {
@@ -201,13 +251,50 @@ const AddQuestion = ({
             className="w-full font-medium"
           />
           {translatedTitle && (
-            <Input
+            <Textarea
               id="question"
               placeholder="question"
+              rows={2}
               value={translatedTitle}
               onChange={(e) => setTranslatedTitle(e.target.value)}
-              className="w-full h-7 border-none shadow-none focus-visible:ring-gray-300"
+              className="w-full font-medium"
             />
+          )}
+        </div>
+        <div className="grid items-center gap-1.5">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="strict-mode"
+              checked={showSnippet}
+              onCheckedChange={(checked) => {
+                setShowSnippet(checked);
+              }}
+            />
+            <Label htmlFor="strict-mode">Add Snippet</Label>
+          </div>
+          {showSnippet && (
+            <>
+              <div>
+                <Label htmlFor="snippetLang">Snippet Language</Label>
+                <Input
+                  id="snippetLang"
+                  placeholder="JavaScript | Python"
+                  value={snippetLang}
+                  onChange={(e) => setSnippetLang(e.target.value.toLowerCase())}
+                />
+              </div>
+              <div>
+                <Label htmlFor="snippetLang">Snippet</Label>
+                <Textarea
+                  rows={1}
+                  id="snippet"
+                  placeholder="snippet"
+                  value={snippet}
+                  onChange={(e) => setSnippet(e.target.value)}
+                  className="w-full font-medium [field-sizing:content]"
+                />
+              </div>
+            </>
           )}
         </div>
         <div className="grid items-center gap-1.5">
@@ -216,7 +303,7 @@ const AddQuestion = ({
           </div>
           <div className="grid grid-cols-2 gap-2">
             {options.map((o, i) => (
-              <div key={i} className="flex gap-1">
+              <div key={i} className="flex items-center gap-1">
                 <Label htmlFor="option1" className="mt-2.5">
                   ({o.key})
                 </Label>
@@ -244,7 +331,7 @@ const AddQuestion = ({
                         setOptions(newOptions);
                       }}
                       onPaste={i === 0 ? handleOptionsPaste : undefined}
-                      className="w-full h-7 border-none shadow-none focus-visible:ring-gray-300"
+                      className="w-full"
                     />
                   )}
                 </div>
@@ -285,7 +372,7 @@ const AddQuestion = ({
             <Button
               variant={"default"}
               onClick={handleTranslate}
-              disabled={!Boolean(title) || options.some((o) => !o.value)}
+              disabled={translateLoading || !Boolean(title) || options.some((o) => !o.value)}
             >
               {translateLoading ? <ReloadIcon className="w-3 h-3 animate-spin mr-2" /> : ""} Translate
             </Button>

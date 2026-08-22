@@ -135,6 +135,9 @@ model Question {
   id              String  @id @default(auto()) @map("_id") @db.ObjectId
   title           String
   translatedTitle String?
+  showSnippet     Boolean @default(false)
+  snippet         String?
+  snippetLang     String?
   answer          String
   quizId          String  @db.ObjectId
   quiz            Quiz    @relation(fields: [quizId], references: [id], onDelete: Cascade, onUpdate: Cascade)

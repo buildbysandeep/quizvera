@@ -60,7 +60,7 @@ export const createQuizDB = async (
     images: IImage[];
     isStrictMode: boolean;
     translation: { enable: boolean; sourceLanguage: string; targetLanguage: string };
-  }
+  },
 ) => {
   try {
     const res = await prisma.$transaction(async (pm) => {
@@ -127,7 +127,7 @@ export const updateQuizDB = async (
     images: IImage[];
     isStrictMode: boolean;
     translation: { enable: boolean; sourceLanguage: string; targetLanguage: string };
-  }
+  },
 ) => {
   try {
     const res = await prisma.$transaction(async (pm) => {
@@ -198,12 +198,18 @@ export const deleteQuizDB = async ({ quizId }: { quizId: string }) => {
 export const addQuestionDB = async ({
   title,
   translatedTitle,
+  showSnippet,
+  snippet,
+  snippetLang,
   answer,
   options,
   quizId,
 }: {
   title: string;
   translatedTitle: string;
+  showSnippet: boolean;
+  snippet: string;
+  snippetLang: string;
   answer: string;
   options: {
     key: string;
@@ -218,6 +224,9 @@ export const addQuestionDB = async ({
         data: {
           title,
           translatedTitle,
+          showSnippet,
+          snippet,
+          snippetLang,
           answer,
           quizId,
         },
@@ -264,12 +273,18 @@ export const updateQuestionDB = async ({
   questionId,
   title,
   translatedTitle,
+  showSnippet,
+  snippet,
+  snippetLang,
   answer,
   options,
 }: {
   questionId: string;
   title: string;
   translatedTitle: string;
+  showSnippet: boolean;
+  snippet: string;
+  snippetLang: string;
   answer: string;
   options: {
     id: string;
@@ -285,6 +300,9 @@ export const updateQuestionDB = async ({
         data: {
           title,
           translatedTitle,
+          showSnippet,
+          snippet,
+          snippetLang,
           answer,
         },
       });

@@ -9,8 +9,9 @@ import { addQuestionDB } from "@/lib/actions/quiz.actions";
 import { Label } from "../ui/label";
 import { GiStarFormation } from "react-icons/gi";
 import { error, success } from "@/lib/utils";
+import { CodeBlock } from "../shared/CodeBlock";
 
-const GenerateQuestions = ({ quizId }: { quizId: string }) => {
+const GenerateQuestions = ({ quizId, isTranslationEnabled }: { quizId: string; isTranslationEnabled: boolean }) => {
   const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState("");
@@ -36,7 +37,7 @@ const GenerateQuestions = ({ quizId }: { quizId: string }) => {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, difficulty, numQuestions }),
+        body: JSON.stringify({ topic, difficulty, numQuestions, isTranslationEnabled }),
       });
 
       const data = await response.json();
@@ -69,6 +70,9 @@ const GenerateQuestions = ({ quizId }: { quizId: string }) => {
         const res = await addQuestionDB({
           title: question.title,
           translatedTitle: question.translatedTitle,
+          showSnippet: question.snippet ? true : false,
+          snippet: question.snippet,
+          snippetLang: question.snippetLang,
           options: question.options,
           answer: question.answer,
           quizId,
@@ -173,19 +177,43 @@ const GenerateQuestions = ({ quizId }: { quizId: string }) => {
                       <div className="flex flex-col gap-1">
                         <div className="flex gap-2 text-base font-medium">
                           <span>{index + 1}.</span>
-                          <p>{question.title}</p>
+                          <div className="min-w-0 w-full">
+                            <p>{question.title}</p>
+                            {question.snippet && (
+                              <CodeBlock lang={question.snippetLang || "plaintext"}>{question.snippet}</CodeBlock>
+                            )}
+                          </div>
                         </div>
                         <div className="grid grid-cols-1 xs:grid-cols-2 gap-1">
                           {question.options
                             .sort((a: any, b: any) => a.key.localeCompare(b.key))
                             .map((option: any, index: number) => (
-                              <div key={option.id} className="flex gap-2 text-sm items-top break-words">
+                              <div key={index} className="flex gap-2 text-sm items-top break-words">
                                 <span className="mt-[-2px]">({option.key})</span>
                                 <p className="leading-4 break-all">{option.value}</p>
                               </div>
                             ))}
                         </div>
                       </div>
+
+                      {isTranslationEnabled && (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex gap-2 font-medium text-base">
+                            <span>{index + 1}.</span>
+                            <p className="text-[13px]">{question.translatedTitle}</p>
+                          </div>
+                          <div className="grid grid-cols-1 xs:grid-cols-2 gap-1">
+                            {question.options
+                              .sort((a: any, b: any) => a.key.localeCompare(b.key))
+                              .map((option: any, index: number) => (
+                                <div key={option.id} className="flex gap-2 text-[13px] items-start">
+                                  <span className="mt-[-2px]">({option.key})</span>
+                                  <p className="leading-5">{option.translatedValue}</p>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
 
                       <div className="">
                         <p className="text-sm absolute bottom-1 left-1">Answer: {question.answer}</p>

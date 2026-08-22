@@ -10,6 +10,8 @@ import { updateQuestionDB } from "@/lib/actions/quiz.actions";
 import { IQuestion, IQuiz } from "@/types";
 import { Pencil2Icon, ReloadIcon } from "@radix-ui/react-icons";
 import { Loader2 } from "lucide-react";
+import { CodeBlock, isSupported } from "../shared/CodeBlock";
+import { Switch } from "../ui/switch";
 
 const EditQuestion = ({
   question,
@@ -29,9 +31,12 @@ const EditQuestion = ({
   const [loading, setLoading] = React.useState(false);
   const [title, setTitle] = React.useState(question.title);
   const [translatedTitle, setTranslatedTitle] = React.useState(question.translatedTitle);
+  const [showSnippet, setShowSnippet] = React.useState(question.showSnippet ? true : false);
+  const [snippet, setSnippet] = React.useState(question.snippet);
+  const [snippetLang, setSnippetLang] = React.useState(question.snippetLang);
   const [translateLoading, setTranslateLoading] = React.useState(false);
   const [options, setOptions] = React.useState<{ id: string; key: string; value: string; translatedValue: string }[]>(
-    question.options
+    question.options,
   );
   const [answer, setAnswer] = React.useState(question.answer);
 
@@ -49,9 +54,28 @@ const EditQuestion = ({
       return;
     }
 
+    if (showSnippet && !snippet && !snippetLang) {
+      error("Please add the snippet and snippet language");
+      return;
+    }
+
+    if (showSnippet && !isSupported(snippetLang)) {
+      error("Please select a supported snippet language");
+      return;
+    }
+
     // add question
     setLoading(true);
-    const res = await updateQuestionDB({ title, translatedTitle, options, answer, questionId: question.id });
+    const res = await updateQuestionDB({
+      title,
+      translatedTitle,
+      showSnippet: showSnippet,
+      snippet,
+      snippetLang,
+      options,
+      answer,
+      questionId: question.id,
+    });
     setLoading(false);
     if (!res.ok) return error(res.error!);
 
@@ -62,27 +86,27 @@ const EditQuestion = ({
     success("Question updated successfully");
   };
 
-  const handleTranslate = async () => {
-    if (translate.source && translate.target) {
-      setTranslateLoading(true);
-      try {
-        if (title) setTranslatedTitle(await translateTextApi(title, translate.source, translate.target));
-        const translatedOptions = options.map(async (option) => {
-          if (option.value)
-            return {
-              ...option,
-              translatedValue: await translateTextApi(option.value, translate.source!, translate.target!),
-            };
-          return option;
-        });
-        setOptions(await Promise.all(translatedOptions));
-      } catch (err: any) {
-        error("Translation failed");
-      } finally {
-        setTranslateLoading(false);
-      }
-    }
-  };
+  // const handleTranslate = async () => {
+  //   if (translate.source && translate.target) {
+  //     setTranslateLoading(true);
+  //     try {
+  //       if (title) setTranslatedTitle(await translateTextApi(title, translate.source, translate.target));
+  //       const translatedOptions = options.map(async (option) => {
+  //         if (option.value)
+  //           return {
+  //             ...option,
+  //             translatedValue: await translateTextApi(option.value, translate.source!, translate.target!),
+  //           };
+  //         return option;
+  //       });
+  //       setOptions(await Promise.all(translatedOptions));
+  //     } catch (err: any) {
+  //       error("Translation failed");
+  //     } finally {
+  //       setTranslateLoading(false);
+  //     }
+  //   }
+  // };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -103,14 +127,59 @@ const EditQuestion = ({
             className="w-full font-medium"
           />
           {translatedTitle && (
-            <Input
+            <Textarea
+              rows={2}
               id="question"
               placeholder="question"
               value={translatedTitle}
               onChange={(e) => setTranslatedTitle(e.target.value)}
-              className="w-full h-7 border-none shadow-none focus-visible:ring-gray-300"
+              className="w-full font-medium"
             />
           )}
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="strict-mode"
+              checked={showSnippet}
+              onCheckedChange={(checked) => {
+                setShowSnippet(checked);
+              }}
+            />
+            <Label htmlFor="strict-mode">{showSnippet ? "Remove" : "Add"} Snippet</Label>
+          </div>
+          {showSnippet && (
+            <>
+              <div>
+                <Label htmlFor="snippetLang">Snippet Language</Label>
+                <Input
+                  id="snippetLang"
+                  placeholder="JavaScript | Python"
+                  value={snippetLang}
+                  onChange={(e) => setSnippetLang(e.target.value.toLowerCase())}
+                />
+              </div>
+              <div>
+                <Label htmlFor="snippetLang">Snippet</Label>
+                <Textarea
+                  rows={1}
+                  id="snippet"
+                  placeholder="snippet"
+                  value={snippet}
+                  onChange={(e) => setSnippet(e.target.value)}
+                  className="w-full font-medium [field-sizing:content]"
+                />
+              </div>
+            </>
+          )}
+          {/* {question.snippet && (
+            <Textarea
+              rows={1}
+              id="snippet"
+              placeholder="snippet"
+              value={snippet}
+              onChange={(e) => setSnippet(e.target.value)}
+              className="w-full font-medium [field-sizing:content]"
+            />
+          )} */}
         </div>
         <div className="grid items-center gap-1.5">
           <div className="flex items-center justify-between">
@@ -142,7 +211,7 @@ const EditQuestion = ({
                         newOptions[i].translatedValue = e.target.value;
                         setOptions(newOptions);
                       }}
-                      className="w-full h-7 border-none shadow-none focus-visible:ring-gray-300"
+                      className="w-full"
                     />
                   )}
                 </div>
@@ -172,11 +241,11 @@ const EditQuestion = ({
           </RadioGroup>
         </div>
         <div className="flex items-center gap-1.5 mt-5">
-          {translate.enable && (
+          {/* {translate.enable && (
             <Button onClick={handleTranslate} disabled={!Boolean(title) || options.some((o) => !o.value)}>
               {translateLoading ? <ReloadIcon className="w-3 h-3 animate-spin mr-2" /> : ""} Translate
             </Button>
-          )}
+          )} */}
           <Button
             className="w-full"
             onClick={handleSubmit}

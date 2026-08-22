@@ -7,10 +7,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { topic, difficulty, numQuestions } = await req.json();
+    const { topic, difficulty, numQuestions, isTranslationEnabled } = await req.json();
+    if (!topic || !difficulty || !numQuestions) {
+      return NextResponse.json({ error: "Invalid request body!" });
+    }
 
     // using gemini
-    const questions = await generateQuestions({ topic, difficulty, numQuestions });
+    const questions = await generateQuestions({ topic, difficulty, numQuestions, isTranslationEnabled });
 
     return NextResponse.json({ questions });
   } catch (error: any) {

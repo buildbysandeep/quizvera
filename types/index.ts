@@ -45,6 +45,9 @@ export interface IQuestion {
   id: string;
   title: string;
   translatedTitle: string;
+  showSnippet: boolean;
+  snippet: string;
+  snippetLang: string;
   answer: string;
   quizId: string;
   options: IOption[];

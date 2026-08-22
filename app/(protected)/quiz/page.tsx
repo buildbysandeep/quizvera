@@ -39,6 +39,7 @@ import { SiGmail } from "react-icons/si";
 import { successResultWithNote } from "@/lib/templates/success-result-with-note";
 import { rejectResultWithNote } from "@/lib/templates/rejectResult";
 import GenerateQuestions from "@/components/dialogs/GenerateQuestions";
+import { CodeBlock } from "@/components/shared/CodeBlock";
 
 const Page = ({ searchParams }: { searchParams: { id: string } }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -119,7 +120,7 @@ const Page = ({ searchParams }: { searchParams: { id: string } }) => {
           <QuizDesc desc={data.desc} editable />
 
           <div className="flex gap-2">
-            <GenerateQuestions quizId={data.id} />
+            <GenerateQuestions quizId={data.id} isTranslationEnabled={data.translationEnabled} />
 
             <AddQuestion
               quizId={data.id}
@@ -378,6 +379,8 @@ const QuizParticipants = ({
 interface IResult {
   id: string;
   title: string;
+  snippet: string;
+  snippetLang: string;
   options: IOption[];
   correctAnswer: string;
   userAnswer: string | null;
@@ -432,6 +435,8 @@ const Participant = ({
       return {
         id: q.id,
         title: q.title,
+        snippet: q.snippet,
+        snippetLang: q.snippetLang,
         options: q.options,
         correctAnswer: q.answer,
         userAnswer,
@@ -618,77 +623,53 @@ const Participant = ({
             )} */}
           </div>
 
-          <div className={`${showResult ? "block" : "hidden"} max-h-[300px] overflow-y-scroll mt-3`}>
+          <div className={`${showResult ? "block" : "hidden"} overflow-y-scroll mt-3`}>
             {/* @ts-ignore */}
             <div ref={contentRef} className="mx-auto max-w-[1020px]">
               {results.map((res, index) => (
-                <Question key={index} res={res} index={index} />
+                <div
+                  key={res.id}
+                  className={`flex flex-col m-1 p-2 rounded-md ${
+                    res.isCorrect && res.isAttempted ? "bg-green-50" : res.isAttempted ? "bg-red-50" : "bg-gray-50"
+                  }`}
+                >
+                  <div className="flex gap-2 text-base font-medium">
+                    <span>{index + 1}.</span>
+                    <div className="min-w-0 w-full">
+                      <textarea
+                        id={res.id}
+                        readOnly
+                        rows={1}
+                        className="w-full font-medium resize-none overflow-hidden outline-none bg-inherit [field-sizing:content]"
+                        value={res.title}
+                      />
+                      {res.snippet && <CodeBlock lang={res.snippetLang || "plaintext"}>{res.snippet}</CodeBlock>}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 xs:grid-cols-2 gap-1">
+                    {res.options
+                      .sort((a, b) => a.key.localeCompare(b.key))
+                      .map((option, index) => (
+                        <div key={option.id} className="flex items-start gap-2 text-sm">
+                          <div>({option.key})</div>
+                          {res.correctAnswer === option.key && <CheckCircle className="h-4 w-4 text-green-600 mt-[3px]" />}
+                          {res.userAnswer !== res.correctAnswer && res.userAnswer === option.key && (
+                            <XCircle className="h-4 w-4 text-red-500  mt-[3px]" />
+                          )}
+                          <div className="mt-[2px]">
+                            <p className="leading-4">{option.value}</p>
+                            {/* <p className="text-xs leading-[18px] mt-1">{option.translatedValue}</p> */}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
         </div>
       </AccordionContent>
     </AccordionItem>
-  );
-};
-
-const Question = ({ res, index }: { res: IResult; index: number }) => {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-
-    const resize = () => {
-      el.style.height = "auto";
-      const next = el.scrollHeight;
-      if (next > 0) {
-        el.style.height = `${next}px`;
-      }
-    };
-
-    resize();
-
-    const ro = new ResizeObserver(resize);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [res.title]);
-
-  return (
-    <div
-      className={`flex flex-col m-1 p-2 rounded-md ${
-        res.isCorrect && res.isAttempted ? "bg-green-50" : res.isAttempted ? "bg-red-50" : "bg-gray-50"
-      }`}
-    >
-      <div className="flex gap-2 text-base font-medium">
-        <span>{index + 1}.</span>
-        <textarea
-          id={res.id}
-          ref={textareaRef}
-          readOnly
-          rows={1}
-          className="w-full font-medium resize-none overflow-hidden outline-none bg-inherit [field-sizing:content]"
-          value={res.title}
-        />
-      </div>
-      <div className="grid grid-cols-1 xs:grid-cols-2 gap-1">
-        {res.options
-          .sort((a, b) => a.key.localeCompare(b.key))
-          .map((option, index) => (
-            <div key={option.id} className="flex items-start gap-2 text-sm">
-              <div>({option.key})</div>
-              {res.correctAnswer === option.key && <CheckCircle className="h-4 w-4 text-green-600 mt-[3px]" />}
-              {res.userAnswer !== res.correctAnswer && res.userAnswer === option.key && (
-                <XCircle className="h-4 w-4 text-red-500  mt-[3px]" />
-              )}
-              <div className="mt-[2px]">
-                <p className="leading-4">{option.value}</p>
-                <p className="text-xs leading-[18px] mt-1">{option.translatedValue}</p>
-              </div>
-            </div>
-          ))}
-      </div>
-    </div>
   );
 };
 

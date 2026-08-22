@@ -17,7 +17,18 @@ export async function GET(req: NextRequest) {
     const quiz = await prisma.quiz.findUnique({
       where: { id },
       include: {
-        questions: { select: { answer: false, id: true, title: true, translatedTitle: true, quizId: true, options: true } },
+        questions: {
+          select: {
+            answer: false,
+            id: true,
+            title: true,
+            translatedTitle: true,
+            snippet: true,
+            snippetLang: true,
+            quizId: true,
+            options: true,
+          },
+        },
         images: true,
       },
     });
@@ -28,7 +39,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       { ok: true, message: "Data fetched successfully", quiz: { ...quiz, questions: shuffleArray(quiz.questions) } },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.error(error?.message);

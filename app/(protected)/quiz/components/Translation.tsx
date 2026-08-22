@@ -20,19 +20,19 @@ const Translation = ({
   const [enable, setEnable] = React.useState(translation.enable || false);
   const [languagesData, setLanguagesData] = React.useState<{ code: string; name: string; targets: string[] }[]>([]);
 
-  useEffect(() => {
-    const getData = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_TRANSLATION_API}/languages`);
-        if (res.ok) {
-          setIsApiUp(true);
-          const data = await res.json();
-          setLanguagesData(data);
-        }
-      } catch {}
-    };
-    getData();
-  }, []);
+  // useEffect(() => {
+  //   const getData = async () => {
+  //     try {
+  //       const res = await fetch(`${process.env.NEXT_PUBLIC_TRANSLATION_API}/languages`);
+  //       if (res.ok) {
+  //         setIsApiUp(true);
+  //         const data = await res.json();
+  //         setLanguagesData(data);
+  //       }
+  //     } catch {}
+  //   };
+  //   getData();
+  // }, []);
 
   return (
     <div className="flex flex-col">
@@ -44,13 +44,13 @@ const Translation = ({
             setEnable(checked);
             setTranslation((prev) => ({ ...prev, enable: checked }));
           }}
-          disabled={!isApiUp}
+          // disabled={!isApiUp}
         />
         <Label htmlFor="translation">Enable Translation</Label>
       </div>
       <p className="text-sm text-muted-foreground">Translate the quiz into another language</p>
 
-      <div className={`flex items-center space-x-2 mt-2 h-0 overflow-hidden ${enable ? "h-auto" : ""} `}>
+      {/* <div className={`flex items-center space-x-2 mt-2 h-0 overflow-hidden ${enable ? "h-auto" : ""} `}>
         <Select
           defaultValue={translation.sourceLanguage}
           onValueChange={(value) => setTranslation((prev) => ({ ...prev, sourceLanguage: value }))}
@@ -83,7 +83,7 @@ const Translation = ({
             ))}
           </SelectContent>
         </Select>
-      </div>
+      </div> */}
     </div>
   );
 };

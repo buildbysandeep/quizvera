@@ -37,6 +37,7 @@ export function CodeBlock({ children, lang }: Props) {
   return (
     <div
       className="
+      mb-4
       w-full
       min-w-0
       max-w-full

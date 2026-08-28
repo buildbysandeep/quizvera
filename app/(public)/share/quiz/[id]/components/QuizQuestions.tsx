@@ -83,6 +83,7 @@ const Question = ({
                 readOnly
                 rows={1}
                 className="w-full font-medium resize-none overflow-hidden outline-none"
+                value={question.title}
               >
                 {question.title}
               </textarea>

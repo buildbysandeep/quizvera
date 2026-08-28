@@ -62,6 +62,16 @@ const Page = ({ searchParams }: { searchParams: { group: string } }) => {
       return error("Quiz title is required", 1000);
     }
 
+    if (!values.duration || Number(values.duration) < 1) {
+      setFormStatus("");
+      return error("Valid duration is required", 1000);
+    }
+
+    if (!values.maxMarks || Number(values.maxMarks) < 1) {
+      setFormStatus("");
+      return error("Valid max marks is required", 1000);
+    }
+
     // upload images
     let uploadedImages: { key: string; publicId: string; url: string }[] = [];
     if (images.length > 0) {
@@ -181,15 +191,7 @@ const Page = ({ searchParams }: { searchParams: { group: string } }) => {
           </div>
 
           <div className="grid grid-cols-1 gap-2 place-items-end">
-            <Button
-              type="submit"
-              className="w-fit"
-              disabled={
-                formStatus
-                  ? true
-                  : false || (translation.enable ? !translation.sourceLanguage || !translation.targetLanguage : false)
-              }
-            >
+            <Button type="submit" className="w-fit" disabled={formStatus ? true : false || !quizName}>
               {formStatus ? formStatus : "Create"}
             </Button>
           </div>

@@ -19,6 +19,7 @@ import TimeOut from "@/components/dialogs/TimeOut";
 import TimeLeft from "@/components/dialogs/TimeLeft";
 import { Checkbox } from "@/components/ui/checkbox";
 import CountDown from "./components/CountDown";
+import { useWakeLock } from "@/hooks/useWakeLock";
 
 const Page = ({ params }: { params: { id: string } }) => {
   const router = useRouter();
@@ -109,6 +110,8 @@ const Page = ({ params }: { params: { id: string } }) => {
     }
   }, [data]);
 
+  useWakeLock(true);
+
   if (isLoading) {
     return (
       <span className="gap-2 mt-32 flex items-center justify-center">
@@ -170,6 +173,7 @@ const Page = ({ params }: { params: { id: string } }) => {
                     <li>Exiting full-screen will result in disqualification.</li>
                     <li>Switching tabs or windows will lead to disqualification.</li>
                     <li>Ensure stable internet and avoid any interruptions to avoid being disqualified.</li>
+                    <li className="font-semibold">If you are using a mobile device, turn on Do Not Disturb mode.</li>
                   </ul>
                 ) : (
                   <ul className="list-disc px-4">

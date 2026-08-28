@@ -23,7 +23,7 @@ const Page = ({ searchParams }: { searchParams: { id: string } }) => {
   const [data, setData] = useState<IQuiz | null>(null);
 
   const [images, setImages] = React.useState<{ key: string; publicId?: string; file?: File; url: string }[]>(
-    data?.images || []
+    data?.images || [],
   );
   const [imagePublicId, setImagePublicId] = React.useState<string[]>([]);
   const [quizName, setQuizName] = React.useState(data?.title || "");
@@ -91,6 +91,16 @@ const Page = ({ searchParams }: { searchParams: { id: string } }) => {
     if (!values.title) {
       setFormStatus("");
       return error("Quiz title is required", 1000);
+    }
+
+    if (!values.duration || Number(values.duration) < 1) {
+      setFormStatus("");
+      return error("Valid duration is required", 1000);
+    }
+
+    if (!values.maxMarks || Number(values.maxMarks) < 1) {
+      setFormStatus("");
+      return error("Valid max marks is required", 1000);
     }
 
     // upload images

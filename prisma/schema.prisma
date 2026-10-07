@@ -145,7 +145,6 @@ model Question {
   options                Option[]
   participantQuizAnswers ParticipantQuizAnswer[]
 
-  @@unique([quizId, title])
   @@map("questions")
 }
 

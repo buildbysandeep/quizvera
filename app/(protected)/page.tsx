@@ -5,13 +5,17 @@ import Loading from "@/components/shared/Loading";
 import AddGroup from "@/components/dialogs/AddGroup";
 import { useGroups } from "@/hooks/useGroups";
 import { useSession } from "next-auth/react";
-import { ArrowRight, FolderPlus, Layers3, Sparkles } from "lucide-react";
+import useSWR from "swr";
+import { fetcher, fetcherOpt } from "@/lib/utils";
+import { ArrowRight, File, FileQuestion, FolderPlus, Layers3, Sparkles, Users } from "lucide-react";
 
 function Page() {
   const { data: session, status } = useSession();
   const { groups, isLoading } = useGroups();
+  const { data: sharedData, isLoading: sharedLoading } = useSWR("/api/shared-quizzes", fetcher, fetcherOpt);
+  const sharedQuizzes = Array.isArray(sharedData?.data) ? sharedData.data : [];
 
-  if (isLoading || status === "loading") {
+  if (isLoading || status === "loading" || (groups.length === 0 && sharedLoading)) {
     return (
       <div className="flex min-h-[50vh] w-full items-center justify-center">
         <Loading />
@@ -19,7 +23,7 @@ function Page() {
     );
   }
 
-  if (!groups || groups.length === 0) {
+  if (groups.length === 0 && sharedData?.ok === true && sharedQuizzes.length === 0) {
     return <WelcomeScreen name={session?.user?.name} />;
   }
 
@@ -43,13 +47,13 @@ const WelcomeScreen = ({ name }: { name: string | null | undefined }) => {
           </h1>
 
           <p className="mt-4 max-w-lg text-sm leading-7 text-slate-600 sm:text-base">
-            Folders keep quizzes organized by class, subject, or project. Create your first folder, then add quizzes and review
-            participant results from one place.
+            Folders keep quizzes organized by class, subject, or project. Create your first folder, then add quizzes and
+            review participant results from one place.
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <AddGroup />
-            <span className="text-xs text-slate-400">You can create more groups later.</span>
+            <span className="text-xs text-slate-400">You can create more folders later.</span>
           </div>
 
           <div className="mt-10 grid grid-cols-2 gap-3 border-t border-slate-100 pt-6">
@@ -92,20 +96,43 @@ const WelcomeScreen = ({ name }: { name: string | null | undefined }) => {
           </div>
 
           <div className="relative rounded-2xl border border-white/15 bg-white/10 p-4 shadow-xl backdrop-blur-sm">
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-white text-indigo-700">
-                <Layers3 className="h-5 w-5" />
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-100/70">
+              How your workspace is organized
+            </p>
+            <div className="rounded-xl border border-amber-200/30 bg-amber-300/10 p-3">
+              <div className="flex items-center gap-2.5">
+                <div className="grid h-9 w-9 place-items-center rounded-lg bg-amber-200 text-amber-950">
+                  <FolderPlus className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-white">Folder · BCA Semester 1</p>
+                  <p className="mt-0.5 text-[10px] text-indigo-100/70">A subject, class, or project</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-indigo-100/80" />
               </div>
-              <div>
-                <p className="text-sm font-semibold text-white">My first folder</p>
-                <p className="mt-1 text-xs text-indigo-100/70">Your quizzes will live here</p>
+              <div className="ml-4 mt-3 space-y-2 border-l border-white/20 pl-3">
+                <div className="flex items-center gap-2 rounded-lg bg-white/10 px-2.5 py-2">
+                  <Layers3 className="h-4 w-4 shrink-0 text-indigo-200" />
+                  <span className="min-w-0 flex-1 truncate text-xs font-medium text-white">HTML fundamentals quiz</span>
+                  <span className="text-[9px] text-indigo-100/60">Quiz</span>
+                </div>
+                <div className="flex items-center gap-2 rounded-lg bg-white/10 px-2.5 py-2">
+                  <Layers3 className="h-4 w-4 shrink-0 text-indigo-200" />
+                  <span className="min-w-0 flex-1 truncate text-xs font-medium text-white">
+                    JavaScript fundamentals quiz
+                  </span>
+                  <span className="text-[9px] text-indigo-100/60">Quiz</span>
+                </div>
+                {/* <div className="ml-3 flex items-center gap-2 border-l border-white/15 pl-3 text-[10px] text-indigo-100/80">
+                  <Users className="h-3.5 w-3.5" />
+                  Participant submissions and results
+                </div> */}
               </div>
-              <ArrowRight className="ml-auto h-4 w-4 text-indigo-100" />
             </div>
-            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full w-1/3 rounded-full bg-indigo-300" />
+            <div className="mt-3 flex items-center justify-between gap-2 text-[10px] text-indigo-100/70">
+              <span>Folder → quizzes → results</span>
+              <span className="rounded-md bg-white/10 px-2 py-1">Create folder first</span>
             </div>
-            <p className="mt-2 text-[10px] text-indigo-100/60">Step 1 of 3 · Create a folder</p>
           </div>
         </div>
       </div>

@@ -62,7 +62,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
         setIsLoading(false);
         if (!res.ok) return error(res.error!);
         const quiz = res.data as IQuiz & { legacyRedirectSlug?: string };
-        if (quiz.legacyRedirectSlug) { window.location.replace(`/quiz/${quiz.legacyRedirectSlug}`); return; }
+        if (quiz.legacyRedirectSlug) {
+          window.location.replace(`/quiz/${quiz.legacyRedirectSlug}`);
+          return;
+        }
         setData(quiz);
       }
     };
@@ -138,9 +141,18 @@ const Page = ({ params }: { params: { slug: string } }) => {
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600">
                   <CalendarDays className="h-4 w-4 text-indigo-600" />
-                  Created {new Date(data.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
+                  Created{" "}
+                  {new Date(data.createdAt).toLocaleDateString(undefined, {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
                 </span>
-                {data.groupName ? <span className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600">Group: {data.groupName}</span> : null}
+                {data.groupName ? (
+                  <span className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600">
+                    Group: {data.groupName}
+                  </span>
+                ) : null}
               </div>
             </div>
 
@@ -158,7 +170,9 @@ const Page = ({ params }: { params: { slug: string } }) => {
                 quizId={data.id}
                 groupId={data.groupId}
                 isMainAdmin={Boolean(data.isMainAdmin)}
-                onMoved={(groupId, groupName) => setData((current) => current ? { ...current, groupId, groupName } : current)}
+                onMoved={(groupId, groupName) =>
+                  setData((current) => (current ? { ...current, groupId, groupName } : current))
+                }
               />
               <DuplicateQuiz quizId={data.id} title={data.title} />
               {data.isMainAdmin ? (
@@ -172,8 +186,15 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
         <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-3 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-slate-500">Manage content and settings here. Participant reporting has its own dedicated workspace.</p>
-            <Link href={`/quiz/${data.slug}/participants`} className="inline-flex h-9 items-center gap-2 rounded-lg bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-800"><Users className="h-4 w-4" /> View participants</Link>
+            <p className="text-xs text-slate-500">
+              Manage content and settings here. Participant reporting has its own dedicated workspace.
+            </p>
+            <Link
+              href={`/quiz/${data.slug}/participants`}
+              className="inline-flex h-9 items-center gap-2 rounded-lg bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-800"
+            >
+              <Users className="h-4 w-4" /> View participants
+            </Link>
           </div>
         </div>
       </div>
@@ -343,11 +364,8 @@ const Page = ({ params }: { params: { slug: string } }) => {
           </aside>
         </div>
       </TabsContent>
-
-
     </Tabs>
   );
 };
-
 
 export default Page;

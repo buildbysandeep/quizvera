@@ -209,7 +209,7 @@ const Page = ({ searchParams }: { searchParams: { group: string } }) => {
             className="mb-5 inline-flex items-center gap-2 text-xs font-medium text-slate-500 transition-colors hover:text-indigo-700"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Back to group
+            Back to folder
           </Link>
 
           <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
@@ -601,7 +601,7 @@ const Page = ({ searchParams }: { searchParams: { group: string } }) => {
               </div>
               <h3 className="mt-3 text-sm font-semibold text-slate-900">Next step</h3>
               <p className="mt-1.5 text-xs leading-5 text-slate-600">
-                After the quiz is created, open it from the group page to add questions and configure the answer key.
+                After the quiz is created, open it from the folder page to add questions and configure the answer key.
               </p>
             </section>
 

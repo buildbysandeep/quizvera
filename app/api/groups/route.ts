@@ -13,12 +13,16 @@ export async function GET() {
 
     const groups = await prisma.group.findMany({
       where: { adminId },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         slug: true,
         name: true,
+        desc: true,
+        createdAt: true,
 
         quizzes: {
+          orderBy: { createdAt: "desc" },
           select: {
             id: true,
             slug: true,
@@ -57,10 +61,10 @@ export async function POST(req: NextRequest) {
     const name = typeof body?.name === "string" ? body.name.trim() : "";
     const description = typeof body?.description === "string" ? body.description.trim() : "";
     if (!name || name.length > 100) {
-      return NextResponse.json({ ok: false, error: "Group name must be between 1 and 100 characters." }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Folder name must be between 1 and 100 characters." }, { status: 400 });
     }
     if (description.length > 500) {
-      return NextResponse.json({ ok: false, error: "Group description must be 500 characters or fewer." }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Folder description must be 500 characters or fewer." }, { status: 400 });
     }
 
     const base = slugifyGroupName(name);
@@ -74,10 +78,10 @@ export async function POST(req: NextRequest) {
       data: { slug, name, desc: description, adminId },
     });
 
-    return NextResponse.json({ ok: true, message: "Group created successfully", data: group }, { status: 201 });
+    return NextResponse.json({ ok: true, message: "Folder created successfully", data: group }, { status: 201 });
   } catch (error: any) {
     if (error?.code === "P2002") {
-      return NextResponse.json({ ok: false, error: "Group name already exists" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Folder name already exists" }, { status: 400 });
     }
 
     console.error(error?.message);

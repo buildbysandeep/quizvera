@@ -70,7 +70,10 @@ export async function addQuizAdminDB({ quizId, email }: { quizId: string; email:
       return { ok: false, error: "Enter a valid Quizvera account email." };
     }
 
-    const user = await prisma.user.findUnique({ where: { email: normalizedEmail }, select: { id: true, name: true, email: true } });
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true, name: true, email: true },
+    });
     if (!user) return { ok: false, error: "No Quizvera account exists for that email. Ask them to register first." };
     if (user.id === userId) return { ok: false, error: "You are already the primary admin of this quiz." };
 
@@ -130,9 +133,13 @@ export async function duplicateQuizDB({ quizId, groupId, title }: { quizId: stri
     if (!(await userOwnsGroup(groupId, userId))) return { ok: false, error: "Choose a group that belongs to your account." };
 
     const cleanTitle = title.trim();
-    if (!cleanTitle || cleanTitle.length > 160) return { ok: false, error: "Quiz title must be between 1 and 160 characters." };
+    if (!cleanTitle || cleanTitle.length > 160)
+      return { ok: false, error: "Quiz title must be between 1 and 160 characters." };
     const [source, currentUser] = await Promise.all([
-      prisma.quiz.findUnique({ where: { id: quizId }, include: { images: true, questions: { include: { options: true } } } }),
+      prisma.quiz.findUnique({
+        where: { id: quizId },
+        include: { images: true, questions: { include: { options: true } } },
+      }),
       prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
     ]);
     if (!source) return { ok: false, error: "Source quiz not found." };
@@ -164,7 +171,12 @@ export async function duplicateQuizDB({ quizId, groupId, title }: { quizId: stri
 
       if (source.images.length) {
         await tx.image.createMany({
-          data: source.images.map((image) => ({ key: image.key, url: image.url, publicId: image.publicId, quizId: quiz.id })),
+          data: source.images.map((image) => ({
+            key: image.key,
+            url: image.url,
+            publicId: image.publicId,
+            quizId: quiz.id,
+          })),
         });
         for (const image of source.images) {
           await tx.userImage.upsert({
@@ -276,16 +288,18 @@ export async function getMyParticipatedQuizzesDB() {
     const data = attempts.flatMap((attempt) => {
       if (seen.has(attempt.quizId)) return [];
       seen.add(attempt.quizId);
-      return [{
-        participantId: attempt.id,
-        quizId: attempt.quizId,
-        participatedAt: attempt.createdAt,
-        isQualified: attempt.isQualified,
-        statusReason: attempt.anyReason,
-        ...attempt.Quiz,
-        groupName: attempt.Quiz.group.name,
-        questionCount: attempt.Quiz._count.questions,
-      }];
+      return [
+        {
+          participantId: attempt.id,
+          quizId: attempt.quizId,
+          participatedAt: attempt.createdAt,
+          isQualified: attempt.isQualified,
+          statusReason: attempt.anyReason,
+          ...attempt.Quiz,
+          groupName: attempt.Quiz.group.name,
+          questionCount: attempt.Quiz._count.questions,
+        },
+      ];
     });
     return { ok: true, data };
   } catch (error) {
@@ -300,16 +314,43 @@ export async function getMyQuizResultDB({ slug }: { slug: string }) {
     const account = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
     if (!account?.email) return { ok: false, error: "Your account has no email address." };
     const normalizedEmail = account.email.trim().toLowerCase();
-    const quiz = await prisma.quiz.findUnique({ where: { slug }, select: { id: true, slug: true, title: true, desc: true, duration: true, maxMarks: true, questions: { select: { id: true, title: true, snippet: true, snippetLang: true, options: { select: { id: true, key: true, value: true } } } } } });
+    const quiz = await prisma.quiz.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        desc: true,
+        duration: true,
+        maxMarks: true,
+        questions: {
+          select: {
+            id: true,
+            title: true,
+            snippet: true,
+            snippetLang: true,
+            options: { select: { id: true, key: true, value: true } },
+          },
+        },
+      },
+    });
     if (!quiz) return { ok: false, error: "Quiz history not found." };
     const attempt = await prisma.quizParticipant.findFirst({
       where: { quizId: quiz.id, OR: [{ userId }, { participantEmail: normalizedEmail }] },
       orderBy: { createdAt: "desc" },
-      include: { Answers: { select: { id: true, answer: true, questionId: true } }, QuizInputs: { select: { key: true, value: true } } },
+      include: {
+        Answers: { select: { id: true, answer: true, questionId: true } },
+        QuizInputs: { select: { key: true, value: true } },
+      },
     });
     if (!attempt) return { ok: false, error: "You have not participated in this quiz with your account email." };
     const questionIds = quiz.questions.map((question) => question.id);
-    const answerRows = questionIds.length ? await prisma.question.findMany({ where: { id: { in: questionIds }, quizId: quiz.id }, select: { id: true, answer: true } }) : [];
+    const answerRows = questionIds.length
+      ? await prisma.question.findMany({
+          where: { id: { in: questionIds }, quizId: quiz.id },
+          select: { id: true, answer: true },
+        })
+      : [];
     const correctById = new Map(answerRows.map((question) => [question.id, question.answer]));
     const answersById = new Map(attempt.Answers.map((answer) => [answer.questionId, answer.answer]));
     const questions = quiz.questions.map((question) => ({
@@ -319,15 +360,28 @@ export async function getMyQuizResultDB({ slug }: { slug: string }) {
       isCorrect: answersById.has(question.id) && answersById.get(question.id) === correctById.get(question.id),
     }));
     const correctCount = questions.filter((question) => question.isCorrect).length;
-    return { ok: true, data: {
-      slug: quiz.slug, title: quiz.title, desc: quiz.desc, duration: quiz.duration, maxMarks: quiz.maxMarks,
-      participantName: attempt.participantName || undefined, participantEmail: attempt.participantEmail || account.email,
-      createdAt: attempt.createdAt, isQualified: attempt.isQualified, statusReason: attempt.anyReason,
-      correctCount, attemptedCount: attempt.Answers.length, questionCount: quiz.questions.length,
-      score: quiz.questions.length ? Math.round((correctCount / quiz.questions.length) * (quiz.maxMarks || 100)) : 0,
-      percentage: quiz.questions.length ? Math.round((correctCount / quiz.questions.length) * 100) : 0,
-      questions, inputs: attempt.QuizInputs,
-    } };
+    return {
+      ok: true,
+      data: {
+        slug: quiz.slug,
+        title: quiz.title,
+        desc: quiz.desc,
+        duration: quiz.duration,
+        maxMarks: quiz.maxMarks,
+        participantName: attempt.participantName || undefined,
+        participantEmail: attempt.participantEmail || account.email,
+        createdAt: attempt.createdAt,
+        isQualified: attempt.isQualified,
+        statusReason: attempt.anyReason,
+        correctCount,
+        attemptedCount: attempt.Answers.length,
+        questionCount: quiz.questions.length,
+        score: quiz.questions.length ? Math.round((correctCount / quiz.questions.length) * (quiz.maxMarks || 100)) : 0,
+        percentage: quiz.questions.length ? Math.round((correctCount / quiz.questions.length) * 100) : 0,
+        questions,
+        inputs: attempt.QuizInputs,
+      },
+    };
   } catch (cause) {
     console.error("Load participant quiz result failed:", cause);
     return { ok: false, error: "Could not load your quiz result." };
@@ -339,7 +393,10 @@ export async function deleteQuizParticipantDB({ quizId, participantId }: { quizI
     const userId = await getCurrentUserId();
     if (!userId) return { ok: false, error: "You must be signed in." };
     if (!(await getAccessibleQuiz(quizId, userId))) return { ok: false, error: "Quiz not found or access denied." };
-    const participant = await prisma.quizParticipant.findFirst({ where: { id: participantId, quizId }, select: { id: true, userId: true } });
+    const participant = await prisma.quizParticipant.findFirst({
+      where: { id: participantId, quizId },
+      select: { id: true, userId: true },
+    });
     if (!participant) return { ok: false, error: "Participant not found." };
 
     await prisma.$transaction(async (tx) => {
@@ -347,7 +404,10 @@ export async function deleteQuizParticipantDB({ quizId, participantId }: { quizI
       await tx.quizInput.deleteMany({ where: { quizParticipantId: participant.id } });
       await tx.quizParticipant.delete({ where: { id: participant.id } });
 
-      const guest = await tx.user.findUnique({ where: { id: participant.userId }, select: { id: true, email: true, passwordHash: true, googleId: true } });
+      const guest = await tx.user.findUnique({
+        where: { id: participant.userId },
+        select: { id: true, email: true, passwordHash: true, googleId: true },
+      });
       if (guest?.email.endsWith("@participants.quizvera.invalid") && !guest.passwordHash && !guest.googleId) {
         const remainingAttempts = await tx.quizParticipant.count({ where: { userId: guest.id } });
         if (remainingAttempts === 0) await tx.user.delete({ where: { id: guest.id } });

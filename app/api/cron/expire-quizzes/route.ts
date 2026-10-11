@@ -40,9 +40,12 @@ export async function GET(request: NextRequest) {
       await prisma.quiz.updateMany({ where: { id: { in: expiredIds }, published: true }, data: { published: false } });
     }
 
-    return NextResponse.json({ ok: true, checked: publishedQuizzes.length, expired: expiredIds.length, checkedAt: new Date(now).toISOString() }, {
-      headers: { "Cache-Control": "private, no-store, max-age=0" },
-    });
+    return NextResponse.json(
+      { ok: true, checked: publishedQuizzes.length, expired: expiredIds.length, checkedAt: new Date(now).toISOString() },
+      {
+        headers: { "Cache-Control": "private, no-store, max-age=0" },
+      },
+    );
   } catch (cause) {
     console.error("Quiz expiry scheduler failed:", cause);
     return NextResponse.json({ ok: false, error: "Could not check scheduled quiz expiry." }, { status: 500 });

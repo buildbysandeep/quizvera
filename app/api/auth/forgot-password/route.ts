@@ -66,6 +66,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, message: genericMessage });
   } catch (error) {
     console.error("POST /api/auth/forgot-password failed:", error);
-    return NextResponse.json({ ok: false, error: "Could not process the reset request. Please try again later." }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "Could not process the reset request. Please try again later." },
+      { status: 500 },
+    );
   }
 }

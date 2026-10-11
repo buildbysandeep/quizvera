@@ -7,6 +7,6 @@ export const metadata: Metadata = {
 };
 
 export default function MyQuizzesLayout({ children }: { children: React.ReactNode }) {
-  // The protected route group already owns the root <html> and <body>.
+  // The protected route folder already owns the root <html> and <body>.
   return <>{children}</>;
 }

@@ -172,7 +172,9 @@ export function UserRegistration({
               {formError}
             </p>
           ) : phone && phone.length !== 10 ? (
-            <p role="status" className="text-xs text-rose-600">Enter a valid 10-digit phone number.</p>
+            <p role="status" className="text-xs text-rose-600">
+              Enter a valid 10-digit phone number.
+            </p>
           ) : null}
           <DialogFooter>
             <Button

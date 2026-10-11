@@ -14,7 +14,7 @@ const getPageTitle = (pathname: string) => {
   if (pathname.includes("/quiz/create")) return "Create quiz";
   if (pathname.includes("/quiz/edit")) return "Edit quiz";
   if (pathname === "/quiz" || pathname.startsWith("/quiz/")) return "Quiz management";
-  if (pathname.startsWith("/group")) return "Group workspace";
+  if (pathname.startsWith("/group")) return "Folder workspace";
   return "Dashboard";
 };
 
@@ -58,7 +58,7 @@ const Header = ({ session }: { session: Session }) => {
 
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-slate-900">{pageTitle}</p>
-          <p className="hidden truncate text-[11px] text-slate-500 sm:block">Manage your quizzes and groups</p>
+          <p className="hidden truncate text-[11px] text-slate-500 sm:block">Manage your quizzes and folders</p>
         </div>
       </div>
 

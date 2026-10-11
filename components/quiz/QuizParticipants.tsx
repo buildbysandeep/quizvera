@@ -11,8 +11,30 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import Loading from "@/components/shared/Loading";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertTriangle, ArrowDown, ArrowUp, CalendarDays, CheckCircle, ChevronDown, Download, Loader2, Search, ShieldCheck, Trash2, Users, XCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  CalendarDays,
+  CheckCircle,
+  ChevronDown,
+  Download,
+  Loader2,
+  Search,
+  ShieldCheck,
+  Trash2,
+  Users,
+  XCircle,
+} from "lucide-react";
 import { convertJsonToCsv, downloadFile } from "@/lib/download";
 import { SiGmail } from "react-icons/si";
 import { successResultWithNote } from "@/lib/templates/success-result-with-note";
@@ -55,7 +77,9 @@ export default function QuizParticipantsHistory({ quizId, questions }: { quizId:
     }
   };
 
-  useEffect(() => { void refresh(); }, [quizId]);
+  useEffect(() => {
+    void refresh();
+  }, [quizId]);
 
   const onDelete = async (participantId: string): Promise<boolean> => {
     const response = await deleteQuizParticipantDB({ quizId, participantId });
@@ -70,13 +94,21 @@ export default function QuizParticipantsHistory({ quizId, questions }: { quizId:
 
   const normalizedSearch = search.trim().toLowerCase();
   const visibleParticipants = participants.filter((participant) => {
-    const matchesSearch = !normalizedSearch || [participant.User?.name, participant.User?.email, participant.User?.phone]
-      .some((value) => (value ?? "").toLowerCase().includes(normalizedSearch));
-    const matchesStatus = statusFilter === "all" || (statusFilter === "qualified" ? participant.isQualified : !participant.isQualified);
+    const matchesSearch =
+      !normalizedSearch ||
+      [participant.User?.name, participant.User?.email, participant.User?.phone].some((value) =>
+        (value ?? "").toLowerCase().includes(normalizedSearch),
+      );
+    const matchesStatus =
+      statusFilter === "all" || (statusFilter === "qualified" ? participant.isQualified : !participant.isQualified);
     return matchesSearch && matchesStatus;
   });
-  const correctCounts = participants.map((participant) => participant.Answers.filter((answer) => answer.Question?.answer === answer.answer).length);
-  const avgScore = correctCounts.length ? Math.round(correctCounts.reduce((sum, item) => sum + item, 0) / correctCounts.length) : 0;
+  const correctCounts = participants.map(
+    (participant) => participant.Answers.filter((answer) => answer.Question?.answer === answer.answer).length,
+  );
+  const avgScore = correctCounts.length
+    ? Math.round(correctCounts.reduce((sum, item) => sum + item, 0) / correctCounts.length)
+    : 0;
   const qualifiedCount = participants.filter((participant) => participant.isQualified).length;
   const avgPercent = questions.length && participants.length ? Math.round((avgScore / questions.length) * 100) : 0;
   const participantsByDay = new Map<string, IQuizParticipant[]>();
@@ -88,19 +120,124 @@ export default function QuizParticipantsHistory({ quizId, questions }: { quizId:
   }
   const dayGroups = Array.from(participantsByDay.entries()).sort(([left], [right]) => right.localeCompare(left));
 
-  return <div className="space-y-5">
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs font-medium text-slate-500">Total submissions</p><p className="mt-2 text-2xl font-bold tabular-nums text-slate-950">{participants.length}</p><p className="mt-1 text-[11px] text-slate-400">All attempts recorded</p></div>
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4"><p className="text-xs font-medium text-emerald-700">Qualified</p><p className="mt-2 text-2xl font-bold tabular-nums text-emerald-800">{qualifiedCount}</p><p className="mt-1 text-[11px] text-emerald-700/70">{participants.length ? Math.round(qualifiedCount / participants.length * 100) : 0}% of participants</p></div>
-      <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-4"><p className="text-xs font-medium text-rose-700">Disqualified</p><p className="mt-2 text-2xl font-bold tabular-nums text-rose-800">{participants.length - qualifiedCount}</p><p className="mt-1 text-[11px] text-rose-700/70">Check attempt reasons</p></div>
-      <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4"><p className="text-xs font-medium text-indigo-700">Average score</p><p className="mt-2 text-2xl font-bold tabular-nums text-indigo-800">{avgPercent}%</p><p className="mt-1 text-[11px] text-indigo-700/70">Across {questions.length} questions</p></div>
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-medium text-slate-500">Total submissions</p>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-slate-950">{participants.length}</p>
+          <p className="mt-1 text-[11px] text-slate-400">All attempts recorded</p>
+        </div>
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+          <p className="text-xs font-medium text-emerald-700">Qualified</p>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-emerald-800">{qualifiedCount}</p>
+          <p className="mt-1 text-[11px] text-emerald-700/70">
+            {participants.length ? Math.round((qualifiedCount / participants.length) * 100) : 0}% of participants
+          </p>
+        </div>
+        <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-4">
+          <p className="text-xs font-medium text-rose-700">Disqualified</p>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-rose-800">{participants.length - qualifiedCount}</p>
+          <p className="mt-1 text-[11px] text-rose-700/70">Check attempt reasons</p>
+        </div>
+        <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4">
+          <p className="text-xs font-medium text-indigo-700">Average score</p>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-indigo-800">{avgPercent}%</p>
+          <p className="mt-1 text-[11px] text-indigo-700/70">Across {questions.length} questions</p>
+        </div>
+      </div>
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:p-4">
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search participant name, email, or phone…"
+            className="h-10 rounded-xl border-slate-200 pl-9 focus-visible:ring-indigo-500"
+            aria-label="Search participants"
+          />
+        </div>
+        <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">
+          {(
+            [
+              { value: "all", label: `All (${participants.length})` },
+              { value: "qualified", label: `Qualified (${qualifiedCount})` },
+              { value: "disqualified", label: `Disqualified (${participants.length - qualifiedCount})` },
+            ] as const
+          ).map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              aria-pressed={statusFilter === item.value}
+              onClick={() => setStatusFilter(item.value)}
+              className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${statusFilter === item.value ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {isLoading ? (
+        <div className="flex min-h-40 items-center justify-center">
+          <Loading />
+        </div>
+      ) : participants.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-14 text-center">
+          <Users className="mx-auto h-7 w-7 text-slate-400" />
+          <h3 className="mt-3 text-sm font-semibold text-slate-900">No submissions yet</h3>
+          <p className="mt-1 text-sm text-slate-500">Participants will appear here after they submit this quiz.</p>
+        </div>
+      ) : visibleParticipants.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">
+          No participants match these filters.
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {dayGroups.map(([day, dayParticipants]) => {
+            const times = dayParticipants
+              .map((participant) => new Date(participant.createdAt).getTime())
+              .filter(Number.isFinite);
+            const earliest = times.length
+              ? new Date(Math.min(...times)).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+              : "";
+            const latest = times.length
+              ? new Date(Math.max(...times)).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+              : "";
+            return (
+              <section key={day} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-3 sm:px-5">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+                      <CalendarDays className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="truncate text-sm font-semibold text-slate-900">{submissionDayLabel(day)}</h3>
+                      <p className="mt-0.5 text-[11px] text-slate-500">
+                        Submissions between {earliest} and {latest}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold tabular-nums text-slate-700">
+                    {dayParticipants.length} {dayParticipants.length === 1 ? "submission" : "submissions"}
+                  </span>
+                </header>
+                <div className="p-2 sm:p-3">
+                  <QuizParticipants
+                    quizId={quizId}
+                    questions={questions}
+                    participants={dayParticipants}
+                    date={submissionDayLabel(day)}
+                    cb={() => undefined}
+                    onDelete={onDelete}
+                  />
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
     </div>
-    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:p-4">
-      <div className="relative min-w-0 flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search participant name, email, or phone…" className="h-10 rounded-xl border-slate-200 pl-9 focus-visible:ring-indigo-500" aria-label="Search participants" /></div>
-      <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">{([{value:"all",label:`All (${participants.length})`},{value:"qualified",label:`Qualified (${qualifiedCount})`},{value:"disqualified",label:`Disqualified (${participants.length-qualifiedCount})`}] as const).map((item) => <button key={item.value} type="button" aria-pressed={statusFilter === item.value} onClick={() => setStatusFilter(item.value)} className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${statusFilter === item.value ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}>{item.label}</button>)}</div>
-    </div>
-    {isLoading ? <div className="flex min-h-40 items-center justify-center"><Loading /></div> : participants.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-14 text-center"><Users className="mx-auto h-7 w-7 text-slate-400" /><h3 className="mt-3 text-sm font-semibold text-slate-900">No submissions yet</h3><p className="mt-1 text-sm text-slate-500">Participants will appear here after they submit this quiz.</p></div> : visibleParticipants.length === 0 ? <div className="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">No participants match these filters.</div> : <div className="space-y-5">{dayGroups.map(([day, dayParticipants]) => { const times = dayParticipants.map((participant) => new Date(participant.createdAt).getTime()).filter(Number.isFinite); const earliest = times.length ? new Date(Math.min(...times)).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }) : ""; const latest = times.length ? new Date(Math.max(...times)).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }) : ""; return <section key={day} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-3 sm:px-5"><div className="flex min-w-0 items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><CalendarDays className="h-5 w-5" /></span><div className="min-w-0"><h3 className="truncate text-sm font-semibold text-slate-900">{submissionDayLabel(day)}</h3><p className="mt-0.5 text-[11px] text-slate-500">Submissions between {earliest} and {latest}</p></div></div><span className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold tabular-nums text-slate-700">{dayParticipants.length} {dayParticipants.length === 1 ? "submission" : "submissions"}</span></header><div className="p-2 sm:p-3"><QuizParticipants quizId={quizId} questions={questions} participants={dayParticipants} date={submissionDayLabel(day)} cb={() => undefined} onDelete={onDelete} /></div></section>; })}</div>}
-  </div>;
+  );
 }
 
 const QuizParticipants = ({
@@ -176,9 +313,8 @@ const QuizParticipants = ({
 
     const updatedParticipants = sortedData.map((participant: { id: string; answers: number }, index: number) => {
       const updatedParticipant = { ...shortedParticipants.find((p) => p.id === participant.id) };
-      updatedParticipant.percentile = (sortedData.length <= 1
-        ? 100
-        : ((sortedData.length - (index + 1)) / (shortedParticipants.length - 1)) * 100
+      updatedParticipant.percentile = (
+        sortedData.length <= 1 ? 100 : ((sortedData.length - (index + 1)) / (shortedParticipants.length - 1)) * 100
       ).toFixed(2);
       return updatedParticipant;
     });
@@ -193,7 +329,9 @@ const QuizParticipants = ({
 
   useEffect(() => {
     if (sortedByName) {
-      const sortedData = [...shortedParticipants].sort((a, b) => (a.User.name || a.User.email || "").localeCompare(b.User.name || b.User.email || ""));
+      const sortedData = [...shortedParticipants].sort((a, b) =>
+        (a.User.name || a.User.email || "").localeCompare(b.User.name || b.User.email || ""),
+      );
       setShortedParticipants(sortedData);
     }
   }, [sortedByName]);
@@ -251,7 +389,15 @@ const QuizParticipants = ({
 
       <Accordion type="multiple">
         {shortedParticipants.map((participant, index) => (
-          <Participant key={participant.id} data={participant} questions={questions} index={index} date={date} cb={cb} onDelete={onDelete} />
+          <Participant
+            key={participant.id}
+            data={participant}
+            questions={questions}
+            index={index}
+            date={date}
+            cb={cb}
+            onDelete={onDelete}
+          />
         ))}
       </Accordion>
     </div>
@@ -352,16 +498,19 @@ const Participant = ({
     try {
       const userInfoHtml = userInfoRef.current.innerHTML;
       const elementHtml = contentRef.current.innerHTML;
-      const escapedParticipantName = (data.User.name || data.User.email || "Participant").replace(/[&<>\"']/g, (character) => {
-        const entities: Record<string, string> = {
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          "\"": "&quot;",
-          "'": "&#39;",
-        };
-        return entities[character] || character;
-      });
+      const escapedParticipantName = (data.User.name || data.User.email || "Participant").replace(
+        /[&<>\"']/g,
+        (character) => {
+          const entities: Record<string, string> = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+          };
+          return entities[character] || character;
+        },
+      );
 
       const htmlContent = `
       <html>
@@ -455,26 +604,76 @@ const Participant = ({
       <div className="flex items-center gap-1.5">
         <AccordionTrigger className="min-w-0 flex-1 p-2 text-left hover:no-underline">
           <div className="mr-2 flex w-full min-w-0 items-center justify-between gap-3">
-            <span className="min-w-0 truncate">{index + 1}. {data.User.name} {!data.isQualified && <span className="text-red-600 text-xs">- Disqualified</span>}</span>
-            {data.percentile && <span className="flex shrink-0 items-start">{data.percentile}<span className="ml-[2px] mt-[-2px] text-[10px]">th</span></span>}
+            <span className="min-w-0 truncate">
+              {index + 1}. {data.User.name}{" "}
+              {!data.isQualified && <span className="text-red-600 text-xs">- Disqualified</span>}
+            </span>
+            {data.percentile && (
+              <span className="flex shrink-0 items-start">
+                {data.percentile}
+                <span className="ml-[2px] mt-[-2px] text-[10px]">th</span>
+              </span>
+            )}
           </div>
         </AccordionTrigger>
         <Dialog open={deleteDialogOpen} onOpenChange={(nextOpen) => !isDeletingParticipant && setDeleteDialogOpen(nextOpen)}>
           <DialogTrigger asChild>
-            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-slate-400 hover:bg-rose-50 hover:text-rose-700" title="Delete participant and all answers" aria-label={`Delete participant ${data.User.name}`}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0 text-slate-400 hover:bg-rose-50 hover:text-rose-700"
+              title="Delete participant and all answers"
+              aria-label={`Delete participant ${data.User.name}`}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </DialogTrigger>
           <DialogContent className="w-[calc(100%-1.25rem)] rounded-2xl border-slate-200 sm:max-w-md">
             <DialogHeader>
-              <div className="mb-2 grid h-11 w-11 place-items-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-inset ring-rose-100"><AlertTriangle className="h-5 w-5" /></div>
+              <div className="mb-2 grid h-11 w-11 place-items-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-inset ring-rose-100">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
               <DialogTitle>Delete this participant?</DialogTitle>
-              <DialogDescription>This permanently deletes {data.User.name || data.User.email || "this participant"}’s submission, every stored answer, and all custom participant fields. This action cannot be undone.</DialogDescription>
+              <DialogDescription>
+                This permanently deletes {data.User.name || data.User.email || "this participant"}’s submission, every stored
+                answer, and all custom participant fields. This action cannot be undone.
+              </DialogDescription>
             </DialogHeader>
             <DialogFooter className="gap-2 sm:gap-2">
-              <Button type="button" variant="outline" disabled={isDeletingParticipant} onClick={() => setDeleteDialogOpen(false)} className="rounded-xl">Cancel</Button>
-              <Button type="button" variant="destructive" disabled={isDeletingParticipant} className="rounded-xl" onClick={async () => { setIsDeletingParticipant(true); try { const deleted = await onDelete(data.id); if (deleted) setDeleteDialogOpen(false); } finally { setIsDeletingParticipant(false); } }}>
-                {isDeletingParticipant ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting…</> : <><Trash2 className="mr-2 h-4 w-4" /> Delete participant</>}
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isDeletingParticipant}
+                onClick={() => setDeleteDialogOpen(false)}
+                className="rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={isDeletingParticipant}
+                className="rounded-xl"
+                onClick={async () => {
+                  setIsDeletingParticipant(true);
+                  try {
+                    const deleted = await onDelete(data.id);
+                    if (deleted) setDeleteDialogOpen(false);
+                  } finally {
+                    setIsDeletingParticipant(false);
+                  }
+                }}
+              >
+                {isDeletingParticipant ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting…
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete participant
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -894,4 +1093,3 @@ const Participant = ({
     </AccordionItem>
   );
 };
-

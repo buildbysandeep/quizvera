@@ -67,7 +67,10 @@ export function UserNav({ session }: { session: Session }) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild className="gap-2 rounded-lg px-3 py-2 text-sm">
-          <Link href="/profile"><Settings className="h-4 w-4" />Profile settings</Link>
+          <Link href="/profile">
+            <Settings className="h-4 w-4" />
+            Profile settings
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

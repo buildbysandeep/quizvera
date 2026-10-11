@@ -64,9 +64,15 @@ export async function GET() {
   try {
     const userId = await getUserId();
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, image: true } });
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, image: true },
+    });
     if (!user) return NextResponse.json({ ok: false, error: "Account not found." }, { status: 404 });
-    return NextResponse.json({ ok: true, data: { ...user, plan: "Free" } }, { headers: { "Cache-Control": "private, no-store" } });
+    return NextResponse.json(
+      { ok: true, data: { ...user, plan: "Free" } },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
   } catch (cause) {
     console.error("GET /api/profile failed:", cause);
     return NextResponse.json({ ok: false, error: "Could not load your profile." }, { status: 500 });
@@ -81,23 +87,32 @@ export async function POST(request: NextRequest) {
     const userId = await getUserId();
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     const contentLength = Number(request.headers.get("content-length") || 0);
-    if (contentLength > MAX_IMAGE_BYTES + 256 * 1024) return NextResponse.json({ ok: false, error: "Profile picture upload is too large." }, { status: 413 });
+    if (contentLength > MAX_IMAGE_BYTES + 256 * 1024)
+      return NextResponse.json({ ok: false, error: "Profile picture upload is too large." }, { status: 413 });
 
     const formData = await request.formData();
     const file = formData.get("file");
-    if (!(file instanceof File)) return NextResponse.json({ ok: false, error: "Choose a profile picture file." }, { status: 400 });
-    if (!ALLOWED_IMAGE_TYPES.has(file.type)) return NextResponse.json({ ok: false, error: "Use a JPG, PNG, WebP, or GIF image." }, { status: 415 });
-    if (file.size <= 0 || file.size > MAX_IMAGE_BYTES) return NextResponse.json({ ok: false, error: "Profile picture must be 5 MB or smaller." }, { status: 413 });
+    if (!(file instanceof File))
+      return NextResponse.json({ ok: false, error: "Choose a profile picture file." }, { status: 400 });
+    if (!ALLOWED_IMAGE_TYPES.has(file.type))
+      return NextResponse.json({ ok: false, error: "Use a JPG, PNG, WebP, or GIF image." }, { status: 415 });
+    if (file.size <= 0 || file.size > MAX_IMAGE_BYTES)
+      return NextResponse.json({ ok: false, error: "Profile picture must be 5 MB or smaller." }, { status: 413 });
 
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
     const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
-    if (!cloudName || !uploadPreset) return NextResponse.json({ ok: false, error: "Image storage is not configured." }, { status: 503 });
+    if (!cloudName || !uploadPreset)
+      return NextResponse.json({ ok: false, error: "Image storage is not configured." }, { status: 503 });
 
-    const oldUser = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, image: true, imagePublicId: true } });
+    const oldUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, image: true, imagePublicId: true },
+    });
     if (!oldUser) return NextResponse.json({ ok: false, error: "Account not found." }, { status: 404 });
     const requestedName = formData.get("name");
     const name = typeof requestedName === "string" ? requestedName.trim() : "";
-    if (name && name.length > 120) return NextResponse.json({ ok: false, error: "Name must be 120 characters or fewer." }, { status: 400 });
+    if (name && name.length > 120)
+      return NextResponse.json({ ok: false, error: "Name must be 120 characters or fewer." }, { status: 400 });
 
     formData.set("upload_preset", uploadPreset);
     formData.set("folder", `${(process.env.CLOUDINARY_FOLDER_NAME || "quizvera").replace(/\/$/, "")}/profiles/${userId}`);
@@ -108,7 +123,11 @@ export async function POST(request: NextRequest) {
       cache: "no-store",
     });
     const uploadResult = await response.json().catch(() => null);
-    if (!response.ok) return NextResponse.json({ ok: false, error: uploadResult?.error?.message || "Profile picture upload failed." }, { status: response.status });
+    if (!response.ok)
+      return NextResponse.json(
+        { ok: false, error: uploadResult?.error?.message || "Profile picture upload failed." },
+        { status: response.status },
+      );
 
     uploadedPublicId = typeof uploadResult?.public_id === "string" ? uploadResult.public_id : "";
     const secureUrl = typeof uploadResult?.secure_url === "string" ? uploadResult.secure_url : "";
@@ -130,7 +149,10 @@ export async function POST(request: NextRequest) {
       newUrl: secureUrl,
       newPublicId: uploadedPublicId,
     });
-    return NextResponse.json({ ok: true, data: { ...user, plan: "Free" } }, { headers: { "Cache-Control": "private, no-store" } });
+    return NextResponse.json(
+      { ok: true, data: { ...user, plan: "Free" } },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
   } catch (cause) {
     if (uploadedPublicId && !imageSaved) await deleteCloudinaryImages([uploadedPublicId]).catch(() => undefined);
     console.error("POST /api/profile failed:", cause);
@@ -145,24 +167,54 @@ export async function PUT(request: NextRequest) {
     const body = await request.json().catch(() => null);
     const name = typeof body?.name === "string" ? body.name.trim() : "";
     const image = body?.image === null ? null : typeof body?.image === "string" ? body.image.trim() : undefined;
-    if (!name || name.length > 120) return NextResponse.json({ ok: false, error: "Name must be between 1 and 120 characters." }, { status: 400 });
-    if (image !== undefined && image !== null && image.length > 2048) return NextResponse.json({ ok: false, error: "Profile picture URL is invalid." }, { status: 400 });
+    if (!name || name.length > 120)
+      return NextResponse.json({ ok: false, error: "Name must be between 1 and 120 characters." }, { status: 400 });
+    if (image !== undefined && image !== null && image.length > 2048)
+      return NextResponse.json({ ok: false, error: "Profile picture URL is invalid." }, { status: 400 });
 
-    const current = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, image: true, imagePublicId: true } });
+    const current = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, image: true, imagePublicId: true },
+    });
     if (!current) return NextResponse.json({ ok: false, error: "Account not found." }, { status: 404 });
     if (typeof image === "string" && image !== current.image) {
       let parsed: URL;
-      try { parsed = new URL(image); } catch { return NextResponse.json({ ok: false, error: "Choose a profile picture uploaded to your account." }, { status: 400 }); }
-      if (parsed.hostname !== "res.cloudinary.com") return NextResponse.json({ ok: false, error: "Choose a profile picture from Quizvera storage." }, { status: 400 });
+      try {
+        parsed = new URL(image);
+      } catch {
+        return NextResponse.json(
+          { ok: false, error: "Choose a profile picture uploaded to your account." },
+          { status: 400 },
+        );
+      }
+      if (parsed.hostname !== "res.cloudinary.com")
+        return NextResponse.json({ ok: false, error: "Choose a profile picture from Quizvera storage." }, { status: 400 });
       const ownedImage = await prisma.userImage.findFirst({ where: { userId, url: image }, select: { id: true } });
-      if (!ownedImage) return NextResponse.json({ ok: false, error: "Upload your profile picture using the profile page." }, { status: 403 });
+      if (!ownedImage)
+        return NextResponse.json(
+          { ok: false, error: "Upload your profile picture using the profile page." },
+          { status: 403 },
+        );
     }
 
-    const user = await prisma.user.update({ where: { id: userId }, data: { name, ...(image !== undefined ? { image, ...(image === null ? { imagePublicId: null } : {}) } : {}) }, select: { id: true, name: true, email: true, image: true } });
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { name, ...(image !== undefined ? { image, ...(image === null ? { imagePublicId: null } : {}) } : {}) },
+      select: { id: true, name: true, email: true, image: true },
+    });
     if (image !== undefined && image !== current.image) {
-      await cleanupPreviousProfileImage({ userId, oldUrl: current.image, oldPublicId: current.imagePublicId, newUrl: image, newPublicId: null });
+      await cleanupPreviousProfileImage({
+        userId,
+        oldUrl: current.image,
+        oldPublicId: current.imagePublicId,
+        newUrl: image,
+        newPublicId: null,
+      });
     }
-    return NextResponse.json({ ok: true, data: { ...user, plan: "Free" } }, { headers: { "Cache-Control": "private, no-store" } });
+    return NextResponse.json(
+      { ok: true, data: { ...user, plan: "Free" } },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
   } catch (cause) {
     console.error("PUT /api/profile failed:", cause);
     return NextResponse.json({ ok: false, error: "Could not update your profile." }, { status: 500 });

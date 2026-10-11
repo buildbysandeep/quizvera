@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Loading from "@/components/shared/Loading";
 import DeleteGroup from "@/components/dialogs/DeleteGroup";
+import EditGroup from "@/components/dialogs/EditGroup";
 import { error, fetcher, fetcherOpt } from "@/lib/utils";
 import { IQuiz } from "@/types";
 
@@ -46,7 +47,10 @@ const Detail = ({ slug }: { slug: string }) => {
   const [filter, setFilter] = useState<QuizFilter>("all");
 
   const group = data?.ok ? data.group : null;
-  const quizzes: IQuiz[] = Array.isArray(group?.quizzes) ? group.quizzes : [];
+  const quizzes = useMemo<IQuiz[]>(() => {
+    const items: IQuiz[] = Array.isArray(group?.quizzes) ? group.quizzes : [];
+    return [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [group?.quizzes]);
   const publishedCount = quizzes.filter((quiz) => quiz.published).length;
   const draftCount = quizzes.length - publishedCount;
 
@@ -127,7 +131,8 @@ const Detail = ({ slug }: { slug: string }) => {
               </div>
             </div>
 
-            <div className="flex shrink-0 items-center gap-2 self-start">
+            <div className="flex shrink-0 flex-wrap items-center gap-2 self-start">
+              <EditGroup group={{ id: group.id, slug: group.slug, name: group.name, desc: group.desc }} />
               <Button asChild className="h-10 gap-2 rounded-xl px-4 shadow-sm">
                 <Link href={`/quiz/create?group=${group.id}`}>
                   <Plus className="h-4 w-4" />

@@ -72,16 +72,38 @@ const TimeOut = ({ open, answers, quizInputs, quizId, groupId, userId, attemptTo
 
   return (
     <Dialog open={open}>
-      <DialogContent className="rounded-2xl border-slate-200 sm:max-w-md" onEscapeKeyDown={(event) => event.preventDefault()} onPointerDownOutside={(event) => event.preventDefault()}>
+      <DialogContent
+        className="rounded-2xl border-slate-200 sm:max-w-md"
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => event.preventDefault()}
+      >
         <DialogHeader>
-          <div className="mb-2 grid h-11 w-11 place-items-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-inset ring-rose-100"><ClockAlert className="h-5 w-5" /></div>
+          <div className="mb-2 grid h-11 w-11 place-items-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-inset ring-rose-100">
+            <ClockAlert className="h-5 w-5" />
+          </div>
           <DialogTitle className="text-lg font-bold text-slate-900">Time is up</DialogTitle>
-          <DialogDescription>Your quiz time has expired. Your current answers are being saved and the submission will be marked as timed out.</DialogDescription>
+          <DialogDescription>
+            Your quiz time has expired. Your current answers are being saved and the submission will be marked as timed out.
+          </DialogDescription>
         </DialogHeader>
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          <div className="flex items-center gap-2">{isSaving ? <Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> : null}<span>{isSaving ? "Saving your answers…" : saveFailed ? "Automatic save may have failed." : "Submission processed."}</span></div>
+          <div className="flex items-center gap-2">
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> : null}
+            <span>
+              {isSaving ? "Saving your answers…" : saveFailed ? "Automatic save may have failed." : "Submission processed."}
+            </span>
+          </div>
         </div>
-        <DialogFooter><Button type="button" onClick={() => router.replace(`/share/quiz/${quizSlug}/result?timeOut=true`)} disabled={isSaving} className="rounded-xl bg-indigo-600 hover:bg-indigo-700">{isSaving ? "Please wait…" : "View result"}</Button></DialogFooter>
+        <DialogFooter>
+          <Button
+            type="button"
+            onClick={() => router.replace(`/share/quiz/${quizSlug}/result?timeOut=true`)}
+            disabled={isSaving}
+            className="rounded-xl bg-indigo-600 hover:bg-indigo-700"
+          >
+            {isSaving ? "Please wait…" : "View result"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

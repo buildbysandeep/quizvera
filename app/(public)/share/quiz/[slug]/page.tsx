@@ -19,7 +19,16 @@ import TimeLeft from "@/components/dialogs/TimeLeft";
 import { Checkbox } from "@/components/ui/checkbox";
 import CountDown from "./components/CountDown";
 import { useWakeLock } from "@/hooks/useWakeLock";
-import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, Clock3, FileWarning, ShieldCheck, Wifi } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CalendarClock,
+  CheckCircle2,
+  Clock3,
+  FileWarning,
+  ShieldCheck,
+  Wifi,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QuizSubmit } from "@/components/dialogs/QuizSubmit";
 import SharedAvailabilityClock from "./components/SharedAvailabilityClock";
@@ -28,7 +37,12 @@ const Page = ({ params }: { params: { slug: string } }) => {
   const router = useRouter();
   const [user, setUser] = React.useState<IUser | null>(null);
   const [attemptToken, setAttemptToken] = React.useState<string | null>(null);
-  const { data, isLoading, error: requestError, mutate } = useSWR(`/api/quiz/share/${params.slug}`, fetcher, {
+  const {
+    data,
+    isLoading,
+    error: requestError,
+    mutate,
+  } = useSWR(`/api/quiz/share/${params.slug}`, fetcher, {
     ...fetcherOpt,
     revalidateOnFocus: true,
   });
@@ -71,7 +85,10 @@ const Page = ({ params }: { params: { slug: string } }) => {
         return;
       }
       if (hasEnteredFullScreen.current) {
-        void disqualify("You have exited full-screen mode!", `/share/quiz/${data.quiz.slug || params.slug}/disqualified?exitFullScreen=true`);
+        void disqualify(
+          "You have exited full-screen mode!",
+          `/share/quiz/${data.quiz.slug || params.slug}/disqualified?exitFullScreen=true`,
+        );
       }
     };
 
@@ -111,7 +128,9 @@ const Page = ({ params }: { params: { slug: string } }) => {
 
   useEffect(() => {
     if (!data?.ok || data?.quiz?.availability?.status !== "waiting") return;
-    const refresh = window.setInterval(() => { void mutate(); }, 3000);
+    const refresh = window.setInterval(() => {
+      void mutate();
+    }, 3000);
     return () => window.clearInterval(refresh);
   }, [data?.ok, data?.quiz?.availability?.status, mutate]);
 
@@ -155,17 +174,41 @@ const Page = ({ params }: { params: { slug: string } }) => {
     const isManualWaiting = quiz.availability.waitingReason === "admin";
     return (
       <main className="mx-auto min-h-[80vh] w-full max-w-3xl px-4 py-10 sm:py-16">
-        {quiz.availability.startAt ? <SharedAvailabilityClock targetAt={quiz.availability.startAt} label="Quiz opens in" waiting /> : null}
+        {quiz.availability.startAt ? (
+          <SharedAvailabilityClock targetAt={quiz.availability.startAt} label="Quiz opens in" waiting />
+        ) : null}
         <section className="mt-4 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
           <div className="border-b border-slate-100 bg-gradient-to-br from-white via-white to-indigo-50/80 p-6 sm:p-9">
-            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-indigo-100 text-indigo-700"><CalendarClock className="h-6 w-6" /></div>
-            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700">Published · Not open yet</span>
+            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-indigo-100 text-indigo-700">
+              <CalendarClock className="h-6 w-6" />
+            </div>
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700">
+              Published · Not open yet
+            </span>
             <h1 className="mt-4 break-words text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{quiz.title}</h1>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{isManualWaiting ? "The quiz administrator has published the link. The assessment will begin when the administrator starts the shared timer." : "This assessment is scheduled to open. Keep this page open; it will update automatically when the quiz becomes available."}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {isManualWaiting
+                ? "The quiz administrator has published the link. The assessment will begin when the administrator starts the shared timer."
+                : "This assessment is scheduled to open. Keep this page open; it will update automatically when the quiz becomes available."}
+            </p>
           </div>
           <div className="p-6 sm:p-9">
-            <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4"><Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" /><div><p className="text-sm font-semibold text-slate-900">You’re in the waiting room</p><p className="mt-1 text-xs leading-5 text-slate-500">Questions are hidden until the quiz opens. This prevents participants from viewing assessment content early.</p></div></div>
-            <div className="mt-5 flex items-center justify-between gap-3"><p className="text-xs text-slate-400">Status refreshes automatically every few seconds.</p><Button type="button" variant="outline" className="rounded-xl" onClick={() => void mutate()}>Check now</Button></div>
+            <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
+              <div>
+                <p className="text-sm font-semibold text-slate-900">You’re in the waiting room</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Questions are hidden until the quiz opens. This prevents participants from viewing assessment content
+                  early.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex items-center justify-between gap-3">
+              <p className="text-xs text-slate-400">Status refreshes automatically every few seconds.</p>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={() => void mutate()}>
+                Check now
+              </Button>
+            </div>
           </div>
         </section>
       </main>
@@ -320,7 +363,13 @@ const Page = ({ params }: { params: { slug: string } }) => {
                     <p className="text-xs leading-5 text-slate-500">
                       You will be asked to register before the timer starts.
                     </p>
-                    <UserRegistration visible={isAgreementChecked} setUser={setUser} setAttemptToken={setAttemptToken} quizId={quiz.id} quizSlug={quiz.slug || params.slug} />
+                    <UserRegistration
+                      visible={isAgreementChecked}
+                      setUser={setUser}
+                      setAttemptToken={setAttemptToken}
+                      quizId={quiz.id}
+                      quizSlug={quiz.slug || params.slug}
+                    />
                   </div>
                 </div>
               </div>

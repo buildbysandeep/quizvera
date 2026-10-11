@@ -34,7 +34,7 @@ Quizvera is built as a secure, multi-tenant quiz application for schools, coachi
 ## ⚙️ Features
 
 - Role-based users: `USER`, `ADMIN`, `SUPERADMIN`
-- Group creation and admin management
+- Group creation, group detail editing, admin management, and stable group slug routes
 - Quiz creation with questions, options, and translation fields
 - Participant quiz answer tracking and custom input storage
 - Email sending for notifications and password reset
@@ -50,7 +50,7 @@ Quizvera is built as a secure, multi-tenant quiz application for schools, coachi
 - Shared quiz availability: timer from publishing, manual admin start/waiting room, or a fixed opening/closing window
 - Dedicated `/quiz/<slug>/questions` question-bank page, separate from quiz settings
 - Live admin-side availability status with a shared open/close countdown; participant shared-timer banner stays sticky and replaces the default timer banner when a shared deadline exists
-- Dashboard folder visualization showing quizzes nested under each group/folder, with live/draft status and question/participant counts
+- First-run welcome illustration explaining Folder → Quizzes → Results when an account has no groups or shared quizzes
 - Optional AI generation hooks for Gemini/OpenAI
 
 ## 🛠️ Prerequisites
@@ -127,13 +127,13 @@ Create a `.env` file at the project root and provide values for the following va
 
 ## 🧩 Collaboration and schema update
 
-This version adds the MongoDB collections `quiz_collaborators` and `user_images`. Before updating a live deployment, take a database backup, then run:
+This version adds the MongoDB collections `quiz_collaborators` and `user_images`, plus `Group.previousSlugs` to preserve old group URLs after renaming. Before updating a live deployment, take a database backup, then run:
 
 ```bash
 pnpm prisma
 ```
 
-The Prisma command generates the updated client and pushes the additive schema changes. New quizzes receive a URL-safe slug. Existing quizzes need a one-time slug backfill after schema push:
+The Prisma command generates the updated client and pushes the additive schema changes. New quizzes and groups receive URL-safe slugs. Group details can be edited from the group page; changing a group name updates its slug and retains previous slugs for compatibility redirects. Existing quizzes need a one-time slug backfill after schema push:
 
 ```bash
 node prisma/backfill-quiz-slugs.mjs

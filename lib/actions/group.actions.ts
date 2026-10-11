@@ -13,23 +13,22 @@ async function createUniqueGroupSlug(name: string): Promise<string> {
   return `${base.slice(0, 56)}-${Date.now().toString(36)}`;
 }
 
-
 export const createGroupDB = async ({ name, desc = "" }: { name: string; desc?: string }) => {
   try {
     const userId = await getCurrentUserId();
     if (!userId) return { ok: false, error: "You must be signed in." };
     const cleanName = name.trim();
     const cleanDesc = desc.trim();
-    if (!cleanName || cleanName.length > 80) return { ok: false, error: "Group name must be between 1 and 80 characters." };
-    if (cleanDesc.length > 1000) return { ok: false, error: "Group description is too long." };
+    if (!cleanName || cleanName.length > 80) return { ok: false, error: "Folder name must be between 1 and 80 characters." };
+    if (cleanDesc.length > 1000) return { ok: false, error: "Folder description is too long." };
     const slug = await createUniqueGroupSlug(cleanName);
     const data = await prisma.group.create({ data: { slug, name: cleanName, desc: cleanDesc, adminId: userId } });
     return { ok: true, data };
   } catch (cause) {
     const code = (cause as { code?: string } | null)?.code;
-    if (code === "P2002") return { ok: false, error: "A group with this name already exists." };
-    console.error("Create group failed:", cause);
-    return { ok: false, error: "Could not create this group. Please try again." };
+    if (code === "P2002") return { ok: false, error: "A folder with this name already exists." };
+    console.error("Create folder failed:", cause);
+    return { ok: false, error: "Could not create this folder. Please try again." };
   }
 };
 
@@ -42,7 +41,7 @@ export const deleteGroupDB = async ({ id }: { id: string }) => {
       where: { id, adminId: userId },
       select: { id: true, quizzes: { select: { images: { select: { publicId: true, url: true } } } } },
     });
-    if (!group) return { ok: false, error: "Group not found or access denied." };
+    if (!group) return { ok: false, error: "folder not found or access denied." };
 
     const images = group.quizzes.flatMap((quiz) => quiz.images);
     // Group deletion cascades quiz records, but cover art is reusable personal
@@ -58,7 +57,7 @@ export const deleteGroupDB = async ({ id }: { id: string }) => {
     const data = await prisma.group.delete({ where: { id } });
     return { ok: true, data };
   } catch (error) {
-    console.error("Delete group failed:", error);
-    return { ok: false, error: "Could not delete this group. Please try again." };
+    console.error("Delete folder failed:", error);
+    return { ok: false, error: "Could not delete this folder. Please try again." };
   }
 };

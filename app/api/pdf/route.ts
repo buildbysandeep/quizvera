@@ -53,7 +53,11 @@ export async function POST(req: NextRequest) {
       let allowed = false;
       try {
         const url = new URL(request.url());
-        allowed = url.protocol === "data:" || url.protocol === "blob:" || url.href === "about:blank" || url.origin === "https://cdn.tailwindcss.com";
+        allowed =
+          url.protocol === "data:" ||
+          url.protocol === "blob:" ||
+          url.href === "about:blank" ||
+          url.origin === "https://cdn.tailwindcss.com";
       } catch {
         allowed = false;
       }

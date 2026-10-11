@@ -24,6 +24,9 @@ import {
 } from "lucide-react";
 import { SiPlatformdotsh } from "react-icons/si";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import Image from "next/image";
+import logo from "@/app/assets/logo-small.png";
+import logoLarge from "@/app/assets/quizvera-large-logo.png";
 
 type SidebarQuiz = {
   id: string;
@@ -148,10 +151,16 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
           aria-label="Quizvera dashboard"
           className={`flex min-w-0 items-center gap-2 font-semibold text-slate-900 ${collapsed ? "justify-center" : ""}`}
         >
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-200">
-            <SiPlatformdotsh className="h-[18px] w-[18px]" />
-          </span>
-          {!collapsed && <span className="truncate text-sm tracking-tight">Quizvera</span>}
+          {collapsed && <Image src={logo} width={40} height={40} alt="Quizvera logo" className="rounded-full" />}
+          {!collapsed && (
+            <>
+              <Image src={logoLarge} height={50} alt="Quizvera logo" />
+              {/* <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-200">
+                <SiPlatformdotsh className="h-[18px] w-[18px]" />
+              </span>
+              <span className="truncate text-sm tracking-tight">Quizvera</span> */}
+            </>
+          )}
         </Link>
 
         {onToggleCollapsed && (
@@ -299,7 +308,7 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
             groups.length === 0 &&
             (collapsed ? (
               <div
-                title="No groups yet"
+                title="No folders yet"
                 className="mx-auto grid h-9 w-9 place-items-center rounded-xl border border-dashed border-slate-300 text-slate-400"
               >
                 <FolderKanban className="h-4 w-4" />
@@ -307,13 +316,15 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
             ) : (
               <div className="mx-1 rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center">
                 <FolderKanban className="mx-auto h-5 w-5 text-slate-400" />
-                <p className="mt-2 text-xs font-medium text-slate-700">No groups yet</p>
-                <p className="mt-1 text-[11px] leading-4 text-slate-400">Create a group to organize quizzes.</p>
+                <p className="mt-2 text-xs font-medium text-slate-700">No folders yet</p>
+                <p className="mt-1 text-[11px] leading-4 text-slate-400">Create a folder to organize quizzes.</p>
               </div>
             ))}
 
           {groups.map((group) => {
-            const quizzes = group.quizzes ?? [];
+            const quizzes = [...(group.quizzes ?? [])].sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+            );
             const isGroupActive =
               (isGroupRoute && (routeId === group.id || routeGroupSlug === group.slug || routeGroupSlug === group.id)) ||
               (pathname === "/quiz/create" && groupQueryId === group.id);
@@ -536,7 +547,7 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
         </div>
       </section>
 
-      {/* Add group action */}
+      {/* Add folder action */}
       <div className={`shrink-0 border-t border-slate-100 ${collapsed ? "w-full p-2" : "p-3"}`}>
         {collapsed ? (
           <div className="relative mx-auto h-10 w-10 [&_button]:!flex [&_button]:!h-10 [&_button]:!w-10 [&_button]:!min-w-0 [&_button]:!items-center [&_button]:!justify-center [&_button]:!gap-0 [&_button]:!overflow-hidden [&_button]:!rounded-xl [&_button]:!border [&_button]:!border-slate-200 [&_button]:!bg-slate-50 [&_button]:!p-0 [&_button]:!text-transparent [&_button_svg]:!hidden">
@@ -548,7 +559,7 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
         ) : (
           <>
             <AddGroup fullWidth />
-            <p className="mt-2 text-center text-[10px] text-slate-400">Create a group for each class or project</p>
+            <p className="mt-2 text-center text-[10px] text-slate-400">Create a folder for each class or project</p>
           </>
         )}
       </div>

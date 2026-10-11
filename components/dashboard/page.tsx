@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useDataStore } from "@/stores/data";
 import { CalendarDateRangePicker } from "@/components/dashboard/components/date-range-picker";
 import GroupSwitcher from "@/components/dashboard/components/group-switcher";
-import FolderStructure from "@/components/dashboard/components/folder-structure";
 import { Overview } from "@/components/dashboard/components/overview";
 import { RecentScores } from "@/components/dashboard/components/recent-scores";
 import { TopScores } from "@/components/dashboard/components/top-scores";
@@ -195,14 +194,12 @@ export default function DashboardPage() {
         </div>
       ) : null} */}
 
-      <FolderStructure groups={groups} selectedGroupId={selectedGroupId} />
-
       {/* Metric cards */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-3 xl:gap-4">
         {/* <StatCard
-          title="Total groups"
-          value={formatNumber(stats.totalGroups)}
-          description="Groups in this workspace"
+          title="Total folders"
+          value={formatNumber(stats.totalFolders)}
+          description="Folders in this workspace"
           icon={Layers3}
           tone="indigo"
         /> */}
@@ -265,7 +262,7 @@ export default function DashboardPage() {
               <div>
                 <CardTitle className="text-base font-bold text-slate-900">Activity overview</CardTitle>
                 <CardDescription className="mt-1.5 text-xs leading-5">
-                  Quiz submissions during the selected date range and group scope.
+                  Quiz submissions during the selected date range and folder scope.
                 </CardDescription>
               </div>
               <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">

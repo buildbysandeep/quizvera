@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         typeof attachment.filename !== "string" ||
         attachment.filename.length > 120 ||
         typeof attachment.content !== "string" ||
-        attachment.content.length > Math.ceil(MAX_ATTACHMENT_BYTES * 4 / 3) + 16 ||
+        attachment.content.length > Math.ceil((MAX_ATTACHMENT_BYTES * 4) / 3) + 16 ||
         attachment.mimeType !== "application/pdf"
       ) {
         return NextResponse.json({ ok: false, error: "Only PDF attachments up to 5 MB are supported." }, { status: 400 });
@@ -74,7 +74,13 @@ export async function POST(request: NextRequest) {
       if (!content.length || content.length > MAX_ATTACHMENT_BYTES) {
         return NextResponse.json({ ok: false, error: "PDF attachment is too large." }, { status: 413 });
       }
-      attachments = [{ filename: attachment.filename.replace(/[\r\n\/\\]/g, "_") || "result.pdf", content, contentType: "application/pdf" }];
+      attachments = [
+        {
+          filename: attachment.filename.replace(/[\r\n\/\\]/g, "_") || "result.pdf",
+          content,
+          contentType: "application/pdf",
+        },
+      ];
     }
 
     const host = process.env.EMAIL_HOST;

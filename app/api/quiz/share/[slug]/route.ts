@@ -63,7 +63,9 @@ export async function GET(request: NextRequest) {
           const base = slugifyQuizTitle(legacy.title);
           stableSlug = base;
           let suffix = 2;
-          while (await prisma.quiz.findFirst({ where: { slug: stableSlug, id: { not: legacy.id } }, select: { id: true } })) {
+          while (
+            await prisma.quiz.findFirst({ where: { slug: stableSlug, id: { not: legacy.id } }, select: { id: true } })
+          ) {
             stableSlug = `${base.slice(0, 72 - String(suffix).length - 1)}-${suffix}`;
             suffix += 1;
           }
@@ -75,7 +77,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (!quiz) return NextResponse.json({ ok: false, error: "This quiz link is invalid or no longer available." }, { status: 404 });
+    if (!quiz)
+      return NextResponse.json({ ok: false, error: "This quiz link is invalid or no longer available." }, { status: 404 });
 
     const serverNow = Date.now();
     const availability = evaluateQuizAvailability(quiz, serverNow);
@@ -99,27 +102,33 @@ export async function GET(request: NextRequest) {
     }
 
     if (availability.status === "expired" || !published) {
-      return NextResponse.json({
-        ok: true,
-        message: "This quiz is not currently accepting submissions.",
-        quiz: { id: quiz.id, slug: quiz.slug, title: quiz.title, published: false, availability: availabilityPayload },
-      }, { headers: { "Cache-Control": "private, no-store, max-age=0" } });
+      return NextResponse.json(
+        {
+          ok: true,
+          message: "This quiz is not currently accepting submissions.",
+          quiz: { id: quiz.id, slug: quiz.slug, title: quiz.title, published: false, availability: availabilityPayload },
+        },
+        { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+      );
     }
 
     if (availability.status === "waiting") {
-      return NextResponse.json({
-        ok: true,
-        message: "This quiz is published and waiting to open.",
-        quiz: {
-          id: quiz.id,
-          slug: quiz.slug,
-          title: quiz.title,
-          desc: quiz.desc,
-          published: true,
-          images: quiz.images,
-          availability: availabilityPayload,
+      return NextResponse.json(
+        {
+          ok: true,
+          message: "This quiz is published and waiting to open.",
+          quiz: {
+            id: quiz.id,
+            slug: quiz.slug,
+            title: quiz.title,
+            desc: quiz.desc,
+            published: true,
+            images: quiz.images,
+            availability: availabilityPayload,
+          },
         },
-      }, { headers: { "Cache-Control": "private, no-store, max-age=0" } });
+        { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+      );
     }
 
     // Keep the question order randomized per request without mutating any shared data.
@@ -129,11 +138,14 @@ export async function GET(request: NextRequest) {
       [questions[index], questions[randomIndex]] = [questions[randomIndex], questions[index]];
     }
 
-    return NextResponse.json({
-      ok: true,
-      message: "Quiz fetched successfully",
-      quiz: { ...quiz, published, questions, availability: availabilityPayload },
-    }, { headers: { "Cache-Control": "private, no-store, max-age=0" } });
+    return NextResponse.json(
+      {
+        ok: true,
+        message: "Quiz fetched successfully",
+        quiz: { ...quiz, published, questions, availability: availabilityPayload },
+      },
+      { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+    );
   } catch (cause) {
     console.error("GET /api/quiz/share/[slug] failed:", cause);
     return NextResponse.json({ ok: false, error: "Could not load this quiz." }, { status: 500 });

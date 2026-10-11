@@ -35,9 +35,17 @@ export const userRegDB = async ({
     const quiz = await prisma.quiz.findUnique({
       where: { id: quizId },
       select: {
-        id: true, slug: true, published: true, groupId: true, createdAt: true, publishedAt: true,
-        availabilityMode: true, availabilityDurationMinutes: true, availabilityStartedAt: true,
-        availabilityStartsAt: true, availabilityEndsAt: true,
+        id: true,
+        slug: true,
+        published: true,
+        groupId: true,
+        createdAt: true,
+        publishedAt: true,
+        availabilityMode: true,
+        availabilityDurationMinutes: true,
+        availabilityStartedAt: true,
+        availabilityStartsAt: true,
+        availabilityEndsAt: true,
       },
     });
     if (!quiz) return { ok: false, error: "This quiz is no longer available." };
@@ -48,7 +56,10 @@ export const userRegDB = async ({
       }
       return {
         ok: false,
-        error: availability.status === "waiting" ? "This quiz has not opened yet." : "This quiz is no longer accepting submissions.",
+        error:
+          availability.status === "waiting"
+            ? "This quiz has not opened yet."
+            : "This quiz is no longer accepting submissions.",
         redirectTo: availability.status === "expired" ? `/share/quiz/${quiz.slug || quizId}/expired` : undefined,
       };
     }
@@ -170,44 +181,61 @@ export const submitParticipantQuizDB = async ({
       }
       return {
         ok: false,
-        error: availability.status === "waiting" ? "The quiz has not started yet." : "This quiz is no longer accepting submissions.",
-        redirectTo: availability.status === "expired" ? `/share/quiz/${quiz.slug || quizId}/expired` : `/share/quiz/${quiz.slug || quizId}`,
+        error:
+          availability.status === "waiting"
+            ? "The quiz has not started yet."
+            : "This quiz is no longer accepting submissions.",
+        redirectTo:
+          availability.status === "expired"
+            ? `/share/quiz/${quiz.slug || quizId}/expired`
+            : `/share/quiz/${quiz.slug || quizId}`,
       };
     }
     if (quiz.groupId !== groupId) return { ok: false, error: "Invalid quiz group." };
     if (!Array.isArray(answers) || !Array.isArray(quizInputs)) return { ok: false, error: "Invalid submission payload." };
-    if (answers.length > quiz.questions.length || quizInputs.length > 20) return { ok: false, error: "Submission contains too much data." };
+    if (answers.length > quiz.questions.length || quizInputs.length > 20)
+      return { ok: false, error: "Submission contains too much data." };
     if (typeof isQualified !== "boolean" || (reason != null && (typeof reason !== "string" || reason.length > 500))) {
       return { ok: false, error: "Invalid submission status." };
     }
-    if (answers.some((answer) => !answer || typeof answer.questionId !== "string" || typeof answer.answer !== "string" || answer.answer.length > 20)) {
+    if (
+      answers.some(
+        (answer) =>
+          !answer || typeof answer.questionId !== "string" || typeof answer.answer !== "string" || answer.answer.length > 20,
+      )
+    ) {
       return { ok: false, error: "Submission contains an invalid answer." };
     }
     if (quizInputs.some((input) => !input || typeof input.key !== "string" || typeof input.value !== "string")) {
       return { ok: false, error: "Submission contains an invalid participant field." };
     }
-    if (quiz.userInputs.some((key) => !quizInputs.some((input) => input.key === key && typeof input.value === "string" && input.value.trim()))) {
+    if (
+      quiz.userInputs.some(
+        (key) => !quizInputs.some((input) => input.key === key && typeof input.value === "string" && input.value.trim()),
+      )
+    ) {
       if (isQualified) return { ok: false, error: "Please fill all participant information fields." };
     }
 
     // The client timer is only a convenience. Enforce the configured deadline
     // on the server too, with a short delivery grace for network latency.
     const participantTimedOut = Boolean(
-      isQualified &&
-      !reason &&
-      quiz.duration &&
-      Date.now() > claims.iat + quiz.duration * 60_000 + 30_000,
+      isQualified && !reason && quiz.duration && Date.now() > claims.iat + quiz.duration * 60_000 + 30_000,
     );
     const timedOut = Boolean(participantTimedOut || sharedDeadlineGrace);
     const finalQualified = Boolean(isQualified && !reason && !timedOut);
-    const finalReason = sharedDeadlineGrace ? "Quiz availability ended" : reason?.trim() || (timedOut ? "Time limit exceeded" : null);
+    const finalReason = sharedDeadlineGrace
+      ? "Quiz availability ended"
+      : reason?.trim() || (timedOut ? "Time limit exceeded" : null);
 
     const questionById = new Map(quiz.questions.map((question) => [question.id, question]));
     const seenQuestionIds = new Set<string>();
     for (const answer of answers) {
       const question = questionById.get(answer.questionId);
-      if (!question || seenQuestionIds.has(answer.questionId)) return { ok: false, error: "Submission contains an invalid or duplicate question." };
-      if (!question.options.some((option) => option.key === answer.answer)) return { ok: false, error: "Submission contains an invalid answer option." };
+      if (!question || seenQuestionIds.has(answer.questionId))
+        return { ok: false, error: "Submission contains an invalid or duplicate question." };
+      if (!question.options.some((option) => option.key === answer.answer))
+        return { ok: false, error: "Submission contains an invalid answer option." };
       seenQuestionIds.add(answer.questionId);
     }
 
@@ -238,13 +266,21 @@ export const submitParticipantQuizDB = async ({
       const nonEmptyInputs = quizInputs.filter((input) => input.value.trim());
       if (nonEmptyInputs.length) {
         await tx.quizInput.createMany({
-          data: nonEmptyInputs.map((input) => ({ key: input.key, value: input.value.trim(), quizParticipantId: participant.id })),
+          data: nonEmptyInputs.map((input) => ({
+            key: input.key,
+            value: input.value.trim(),
+            quizParticipantId: participant.id,
+          })),
         });
       }
 
       if (answers.length) {
         await tx.participantQuizAnswer.createMany({
-          data: answers.map((answer) => ({ answer: answer.answer, questionId: answer.questionId, quizParticipantId: participant.id })),
+          data: answers.map((answer) => ({
+            answer: answer.answer,
+            questionId: answer.questionId,
+            quizParticipantId: participant.id,
+          })),
         });
       }
     });
@@ -264,7 +300,7 @@ export const submitParticipantQuizDB = async ({
 
 export const getQuizParticipantsDB = async ({ quizId }: { quizId: string }) => {
   // Imported lazily to keep this function's authorization check close to the
-  // database query and avoid exposing participant records to another group.
+  // database query and avoid exposing participant records to another folder.
   try {
     const { getCurrentUserId, getAccessibleQuiz } = await import("@/lib/authorization");
     const userId = await getCurrentUserId();
@@ -281,7 +317,9 @@ export const getQuizParticipantsDB = async ({ quizId }: { quizId: string }) => {
       },
     });
 
-    const questionIds = Array.from(new Set(participants.flatMap((participant) => participant.Answers.map((answer) => answer.questionId))));
+    const questionIds = Array.from(
+      new Set(participants.flatMap((participant) => participant.Answers.map((answer) => answer.questionId))),
+    );
     const questionRows = questionIds.length
       ? await prisma.question.findMany({ where: { id: { in: questionIds }, quizId }, select: { id: true, answer: true } })
       : [];

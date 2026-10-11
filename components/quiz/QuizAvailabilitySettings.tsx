@@ -11,9 +11,17 @@ import { startQuizAvailabilityDB, updateQuizAvailabilityDB } from "@/lib/actions
 
 type Mode = "ALWAYS" | "PUBLISH_TIMER" | "MANUAL_TIMER" | "FIXED_WINDOW";
 
-type AvailabilityFields = Pick<IQuiz,
-  "id" | "published" | "publishedAt" | "createdAt" | "availabilityMode" | "availabilityDurationMinutes" |
-  "availabilityStartedAt" | "availabilityStartsAt" | "availabilityEndsAt"
+type AvailabilityFields = Pick<
+  IQuiz,
+  | "id"
+  | "published"
+  | "publishedAt"
+  | "createdAt"
+  | "availabilityMode"
+  | "availabilityDurationMinutes"
+  | "availabilityStartedAt"
+  | "availabilityStartsAt"
+  | "availabilityEndsAt"
 >;
 
 function toLocalInput(value?: string | Date | null) {
@@ -53,13 +61,15 @@ function LiveAvailabilityStatus({ quiz }: { quiz: AvailabilityFields }) {
   }, []);
 
   const mode = quiz.availabilityMode || "ALWAYS";
-  const startPublished = mode === "MANUAL_TIMER"
-    ? millis(quiz.availabilityStartedAt)
-    : millis(quiz.availabilityStartedAt) ?? millis(quiz.publishedAt);
+  const startPublished =
+    mode === "MANUAL_TIMER"
+      ? millis(quiz.availabilityStartedAt)
+      : (millis(quiz.availabilityStartedAt) ?? millis(quiz.publishedAt));
   const durationMinutes = Number(quiz.availabilityDurationMinutes ?? 0);
-  const sharedTimerEnd = (mode === "PUBLISH_TIMER" || mode === "MANUAL_TIMER") && startPublished !== null && durationMinutes > 0
-    ? startPublished + durationMinutes * 60_000
-    : null;
+  const sharedTimerEnd =
+    (mode === "PUBLISH_TIMER" || mode === "MANUAL_TIMER") && startPublished !== null && durationMinutes > 0
+      ? startPublished + durationMinutes * 60_000
+      : null;
   const scheduledEnd = mode === "FIXED_WINDOW" ? millis(quiz.availabilityEndsAt) : null;
   let headline = "Always available";
   let subline = "There is no shared countdown. The quiz stays open while it is published.";
@@ -74,13 +84,14 @@ function LiveAvailabilityStatus({ quiz }: { quiz: AvailabilityFields }) {
     state = "closed";
   } else if (!quiz.published) {
     headline = "Timer is not active yet";
-    subline = mode === "FIXED_WINDOW"
-      ? "The scheduled opening countdown becomes active after the quiz is published."
-      : mode === "MANUAL_TIMER"
-        ? "Publish the quiz first; participants can then wait here until you start the timer."
-        : mode === "PUBLISH_TIMER"
-          ? "The shared countdown begins when you publish this quiz."
-          : "Publish the quiz to make the availability rules active.";
+    subline =
+      mode === "FIXED_WINDOW"
+        ? "The scheduled opening countdown becomes active after the quiz is published."
+        : mode === "MANUAL_TIMER"
+          ? "Publish the quiz first; participants can then wait here until you start the timer."
+          : mode === "PUBLISH_TIMER"
+            ? "The shared countdown begins when you publish this quiz."
+            : "Publish the quiz to make the availability rules active.";
     state = "neutral";
   } else if (mode === "PUBLISH_TIMER") {
     if (durationMinutes <= 0 || startPublished === null) {
@@ -92,7 +103,10 @@ function LiveAvailabilityStatus({ quiz }: { quiz: AvailabilityFields }) {
       targetLabel = "Closes in";
       state = now >= target ? "closed" : "open";
       headline = state === "closed" ? "Shared deadline passed" : "Quiz is live · auto-close enabled";
-      subline = state === "closed" ? "The shared time window has ended. New attempts are blocked." : `All participants share the same closing time: ${new Date(target).toLocaleString()}.`;
+      subline =
+        state === "closed"
+          ? "The shared time window has ended. New attempts are blocked."
+          : `All participants share the same closing time: ${new Date(target).toLocaleString()}.`;
     }
   } else if (mode === "MANUAL_TIMER") {
     const started = millis(quiz.availabilityStartedAt);
@@ -109,7 +123,10 @@ function LiveAvailabilityStatus({ quiz }: { quiz: AvailabilityFields }) {
       targetLabel = "Closes in";
       state = now >= target ? "closed" : "open";
       headline = state === "closed" ? "Shared deadline passed" : "Shared timer running";
-      subline = state === "closed" ? "The timer has expired and participants can no longer continue." : `Started ${new Date(started).toLocaleString()}; closes at ${new Date(target).toLocaleString()}.`;
+      subline =
+        state === "closed"
+          ? "The timer has expired and participants can no longer continue."
+          : `Started ${new Date(started).toLocaleString()}; closes at ${new Date(target).toLocaleString()}.`;
     }
   } else if (mode === "FIXED_WINDOW") {
     const start = millis(quiz.availabilityStartsAt);
@@ -148,13 +165,24 @@ function LiveAvailabilityStatus({ quiz }: { quiz: AvailabilityFields }) {
     <div className={`rounded-2xl border p-4 ${tones[state]}`}>
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div className="min-w-0">
-          <div className="flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${state === "open" ? "animate-pulse bg-emerald-500" : state === "waiting" ? "bg-amber-500" : state === "closed" ? "bg-rose-500" : "bg-slate-400"}`} /><p className="text-sm font-semibold">Live status · {headline}</p></div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`h-2 w-2 rounded-full ${state === "open" ? "animate-pulse bg-emerald-500" : state === "waiting" ? "bg-amber-500" : state === "closed" ? "bg-rose-500" : "bg-slate-400"}`}
+            />
+            <p className="text-sm font-semibold">Live status · {headline}</p>
+          </div>
           <p className="mt-1 text-xs leading-5 opacity-90">{subline}</p>
         </div>
         {target !== null && (
           <div className="shrink-0 rounded-xl border border-current/20 bg-white/80 px-3 py-2 text-right shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] opacity-70">{targetLabel}</p>
-            <p className="font-mono text-xl font-bold tabular-nums" role="timer" aria-label={`${targetLabel} ${formatCountdown(target - now)}`}>{formatCountdown(target - now)}</p>
+            <p
+              className="font-mono text-xl font-bold tabular-nums"
+              role="timer"
+              aria-label={`${targetLabel} ${formatCountdown(target - now)}`}
+            >
+              {formatCountdown(target - now)}
+            </p>
           </div>
         )}
       </div>
@@ -176,12 +204,16 @@ export default function QuizAvailabilitySettings({
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
 
-  const modeLabel = useMemo(() => ({
-    ALWAYS: "Always available",
-    PUBLISH_TIMER: "Auto-close after publishing",
-    MANUAL_TIMER: "Wait for admin to start",
-    FIXED_WINDOW: "Fixed time window",
-  }[quiz.availabilityMode || "ALWAYS"]), [quiz.availabilityMode]);
+  const modeLabel = useMemo(
+    () =>
+      ({
+        ALWAYS: "Always available",
+        PUBLISH_TIMER: "Auto-close after publishing",
+        MANUAL_TIMER: "Wait for admin to start",
+        FIXED_WINDOW: "Fixed time window",
+      })[quiz.availabilityMode || "ALWAYS"],
+    [quiz.availabilityMode],
+  );
 
   const save = async () => {
     if (saving) return;
@@ -196,14 +228,18 @@ export default function QuizAvailabilitySettings({
         endsAt: endsAt ? new Date(endsAt).toISOString() : null,
       });
       if (!result.ok) throw new Error(result.error || "Could not save availability settings.");
-      setData((current) => current ? {
-        ...current,
-        availabilityMode: result.data.availabilityMode,
-        availabilityDurationMinutes: result.data.availabilityDurationMinutes,
-        availabilityStartedAt: result.data.availabilityStartedAt,
-        availabilityStartsAt: result.data.availabilityStartsAt,
-        availabilityEndsAt: result.data.availabilityEndsAt,
-      } : current);
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              availabilityMode: result.data.availabilityMode,
+              availabilityDurationMinutes: result.data.availabilityDurationMinutes,
+              availabilityStartedAt: result.data.availabilityStartedAt,
+              availabilityStartsAt: result.data.availabilityStartsAt,
+              availabilityEndsAt: result.data.availabilityEndsAt,
+            }
+          : current,
+      );
       success("Availability settings saved.");
     } catch (cause) {
       error(cause instanceof Error ? cause.message : "Could not save availability settings.");
@@ -218,7 +254,7 @@ export default function QuizAvailabilitySettings({
     try {
       const result = await startQuizAvailabilityDB({ quizId: quiz.id });
       if (!result.ok) throw new Error(result.error || "Could not start the shared timer.");
-      setData((current) => current ? { ...current, availabilityStartedAt: result.data.availabilityStartedAt } : current);
+      setData((current) => (current ? { ...current, availabilityStartedAt: result.data.availabilityStartedAt } : current));
       success(result.alreadyStarted ? "The shared timer has already started." : "Shared timer started for everyone.");
     } catch (cause) {
       error(cause instanceof Error ? cause.message : "Could not start the shared timer.");
@@ -232,17 +268,35 @@ export default function QuizAvailabilitySettings({
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-start gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><CalendarClock className="h-5 w-5" /></div>
-        <div className="min-w-0 flex-1"><h2 className="text-sm font-semibold text-slate-900">Availability & shared timer</h2><p className="mt-1 text-xs leading-5 text-slate-500">This timer is shared by every participant. It is separate from the per-person quiz duration.</p></div>
-        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold ${quiz.published ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-500"}`}>{quiz.published ? "Published" : "Draft"}</span>
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+          <CalendarClock className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm font-semibold text-slate-900">Availability & shared timer</h2>
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            This timer is shared by every participant. It is separate from the per-person quiz duration.
+          </p>
+        </div>
+        <span
+          className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold ${quiz.published ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-500"}`}
+        >
+          {quiz.published ? "Published" : "Draft"}
+        </span>
       </div>
 
       <div className="space-y-5 p-5 sm:p-6">
         <LiveAvailabilityStatus quiz={quiz} />
         <div className="grid gap-2 sm:grid-cols-[minmax(0,240px)_1fr] sm:items-start">
-          <Label htmlFor={`availability-mode-${quiz.id}`} className="pt-2 text-sm text-slate-700">Availability mode</Label>
+          <Label htmlFor={`availability-mode-${quiz.id}`} className="pt-2 text-sm text-slate-700">
+            Availability mode
+          </Label>
           <div className="space-y-2">
-            <select id={`availability-mode-${quiz.id}`} value={mode} onChange={(event) => setMode(event.target.value as Mode)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-indigo-500">
+            <select
+              id={`availability-mode-${quiz.id}`}
+              value={mode}
+              onChange={(event) => setMode(event.target.value as Mode)}
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none ring-offset-white focus-visible:ring-2 focus-visible:ring-indigo-500"
+            >
               <option value="ALWAYS">Always available</option>
               <option value="PUBLISH_TIMER">Auto-close after publishing</option>
               <option value="MANUAL_TIMER">Admin starts shared timer</option>
@@ -250,27 +304,66 @@ export default function QuizAvailabilitySettings({
             </select>
             <p className="text-xs leading-5 text-slate-500">
               {mode === "ALWAYS" && "The quiz stays available while published. Stop sharing manually whenever you need."}
-              {mode === "PUBLISH_TIMER" && "The shared countdown begins when you publish. Everyone sees the same closing deadline."}
-              {mode === "MANUAL_TIMER" && "Publish the link while participants wait. Start the clock here when you are ready; an optional duration can close it automatically."}
-              {mode === "FIXED_WINDOW" && "The quiz opens automatically at the start time and stops accepting new or in-progress submissions at the end time."}
+              {mode === "PUBLISH_TIMER" &&
+                "The shared countdown begins when you publish. Everyone sees the same closing deadline."}
+              {mode === "MANUAL_TIMER" &&
+                "Publish the link while participants wait. Start the clock here when you are ready; an optional duration can close it automatically."}
+              {mode === "FIXED_WINDOW" &&
+                "The quiz opens automatically at the start time and stops accepting new or in-progress submissions at the end time."}
             </p>
           </div>
         </div>
 
         {(mode === "PUBLISH_TIMER" || mode === "MANUAL_TIMER") && (
           <div className="grid gap-2 sm:grid-cols-[minmax(0,240px)_1fr] sm:items-start">
-            <Label htmlFor={`availability-duration-${quiz.id}`} className="pt-2 text-sm text-slate-700">Shared duration</Label>
+            <Label htmlFor={`availability-duration-${quiz.id}`} className="pt-2 text-sm text-slate-700">
+              Shared duration
+            </Label>
             <div className="space-y-2">
-              <div className="relative max-w-sm"><Input id={`availability-duration-${quiz.id}`} type="number" min={1} max={10080} value={duration} onChange={(event) => setDuration(event.target.value)} placeholder={mode === "MANUAL_TIMER" ? "No automatic closing" : "60"} className="h-11 rounded-xl pr-20" /><span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">minutes</span></div>
-              {mode === "MANUAL_TIMER" && <p className="text-xs text-slate-500">Leave empty to keep it open until you manually unpublish it.</p>}
+              <div className="relative max-w-sm">
+                <Input
+                  id={`availability-duration-${quiz.id}`}
+                  type="number"
+                  min={1}
+                  max={10080}
+                  value={duration}
+                  onChange={(event) => setDuration(event.target.value)}
+                  placeholder={mode === "MANUAL_TIMER" ? "No automatic closing" : "60"}
+                  className="h-11 rounded-xl pr-20"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                  minutes
+                </span>
+              </div>
+              {mode === "MANUAL_TIMER" && (
+                <p className="text-xs text-slate-500">Leave empty to keep it open until you manually unpublish it.</p>
+              )}
             </div>
           </div>
         )}
 
         {mode === "FIXED_WINDOW" && (
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2"><Label htmlFor={`availability-start-${quiz.id}`}>Opens at</Label><Input id={`availability-start-${quiz.id}`} type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} className="h-11 rounded-xl" /></div>
-            <div className="space-y-2"><Label htmlFor={`availability-end-${quiz.id}`}>Closes at</Label><Input id={`availability-end-${quiz.id}`} type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} className="h-11 rounded-xl" /></div>
+            <div className="space-y-2">
+              <Label htmlFor={`availability-start-${quiz.id}`}>Opens at</Label>
+              <Input
+                id={`availability-start-${quiz.id}`}
+                type="datetime-local"
+                value={startsAt}
+                onChange={(event) => setStartsAt(event.target.value)}
+                className="h-11 rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`availability-end-${quiz.id}`}>Closes at</Label>
+              <Input
+                id={`availability-end-${quiz.id}`}
+                type="datetime-local"
+                value={endsAt}
+                onChange={(event) => setEndsAt(event.target.value)}
+                className="h-11 rounded-xl"
+              />
+            </div>
           </div>
         )}
 
@@ -279,19 +372,59 @@ export default function QuizAvailabilitySettings({
             <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-slate-800">Current configuration: {modeLabel}</p>
-              {quiz.availabilityMode === "MANUAL_TIMER" && quiz.availabilityStartedAt ? <p className="mt-1 text-xs text-slate-500">Timer started {prettyDate(quiz.availabilityStartedAt)}{quiz.availabilityDurationMinutes ? ` · closes ${prettyDate(new Date(new Date(quiz.availabilityStartedAt).getTime() + quiz.availabilityDurationMinutes * 60_000))}` : " · no automatic close"}.</p> : null}
-              {quiz.availabilityMode === "PUBLISH_TIMER" && quiz.published ? <p className="mt-1 text-xs text-slate-500">The end time is calculated from the publication/start timestamp and shared duration.</p> : null}
-              {quiz.availabilityMode === "FIXED_WINDOW" ? <p className="mt-1 text-xs text-slate-500">{prettyDate(quiz.availabilityStartsAt) || "Start time not set"} → {prettyDate(quiz.availabilityEndsAt) || "End time not set"}</p> : null}
-              {quiz.availabilityMode === "ALWAYS" ? <p className="mt-1 text-xs text-slate-500">No shared deadline is configured.</p> : null}
-              {!quiz.published && <p className="mt-2 text-xs text-slate-600">Publish this quiz to make its waiting room or availability schedule accessible.</p>}
-              {isManualWaiting && quiz.published && <p className="mt-2 text-xs font-medium text-amber-700">Participants can open the link and wait here until you start the timer.</p>}
+              {quiz.availabilityMode === "MANUAL_TIMER" && quiz.availabilityStartedAt ? (
+                <p className="mt-1 text-xs text-slate-500">
+                  Timer started {prettyDate(quiz.availabilityStartedAt)}
+                  {quiz.availabilityDurationMinutes
+                    ? ` · closes ${prettyDate(new Date(new Date(quiz.availabilityStartedAt).getTime() + quiz.availabilityDurationMinutes * 60_000))}`
+                    : " · no automatic close"}
+                  .
+                </p>
+              ) : null}
+              {quiz.availabilityMode === "PUBLISH_TIMER" && quiz.published ? (
+                <p className="mt-1 text-xs text-slate-500">
+                  The end time is calculated from the publication/start timestamp and shared duration.
+                </p>
+              ) : null}
+              {quiz.availabilityMode === "FIXED_WINDOW" ? (
+                <p className="mt-1 text-xs text-slate-500">
+                  {prettyDate(quiz.availabilityStartsAt) || "Start time not set"} →{" "}
+                  {prettyDate(quiz.availabilityEndsAt) || "End time not set"}
+                </p>
+              ) : null}
+              {quiz.availabilityMode === "ALWAYS" ? (
+                <p className="mt-1 text-xs text-slate-500">No shared deadline is configured.</p>
+              ) : null}
+              {!quiz.published && (
+                <p className="mt-2 text-xs text-slate-600">
+                  Publish this quiz to make its waiting room or availability schedule accessible.
+                </p>
+              )}
+              {isManualWaiting && quiz.published && (
+                <p className="mt-2 text-xs font-medium text-amber-700">
+                  Participants can open the link and wait here until you start the timer.
+                </p>
+              )}
             </div>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-4">
-          {quiz.published && quiz.availabilityMode === "MANUAL_TIMER" && !quiz.availabilityStartedAt && <Button type="button" onClick={startTimer} disabled={starting || saving} className="rounded-xl bg-emerald-600 hover:bg-emerald-700"><Play className="mr-2 h-4 w-4" />{starting ? "Starting…" : "Start timer for everyone"}</Button>}
-          <Button type="button" variant="outline" onClick={save} disabled={saving || starting} className="rounded-xl">{saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}{saving ? "Saving…" : "Save availability"}</Button>
+          {quiz.published && quiz.availabilityMode === "MANUAL_TIMER" && !quiz.availabilityStartedAt && (
+            <Button
+              type="button"
+              onClick={startTimer}
+              disabled={starting || saving}
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700"
+            >
+              <Play className="mr-2 h-4 w-4" />
+              {starting ? "Starting…" : "Start timer for everyone"}
+            </Button>
+          )}
+          <Button type="button" variant="outline" onClick={save} disabled={saving || starting} className="rounded-xl">
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {saving ? "Saving…" : "Save availability"}
+          </Button>
         </div>
       </div>
     </section>

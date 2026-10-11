@@ -9,7 +9,10 @@ export default async function LegacyGroupRoute({ searchParams }: { searchParams:
   const session = await auth();
   const userId = (session?.user as { id?: string } | undefined)?.id;
   if (!userId) redirect("/");
-  const group = await prisma.group.findFirst({ where: { id, adminId: userId }, select: { id: true, slug: true, name: true } });
+  const group = await prisma.group.findFirst({
+    where: { id, adminId: userId },
+    select: { id: true, slug: true, name: true },
+  });
   if (!group) redirect("/");
   let slug = group.slug;
   if (!slug) {

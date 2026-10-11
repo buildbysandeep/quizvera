@@ -37,7 +37,11 @@ const DeleteQuiz = ({ quizId, groupId }: { quizId: string; groupId: string }) =>
         return;
       }
       setOpen(false);
-      setGroups(groups.map((group) => group.id === groupId ? { ...group, quizzes: (group.quizzes ?? []).filter((quiz) => quiz.id !== quizId) } : group));
+      setGroups(
+        groups.map((group) =>
+          group.id === groupId ? { ...group, quizzes: (group.quizzes ?? []).filter((quiz) => quiz.id !== quizId) } : group,
+        ),
+      );
       await mutate("/api/groups");
       if (result.warning) error(result.warning);
       else success("Quiz deleted successfully");

@@ -27,16 +27,16 @@ enum QuizAvailabilityMode {
 }
 
 model User {
-  id           String  @id @default(auto()) @map("_id") @db.ObjectId
-  name         String?
-  image        String?
+  id            String  @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  image         String?
   imagePublicId String?
-  email        String  @unique
-  phone        String?
-  passwordHash String?
-  googleId     String?
-  role         Role[]  @default([USER])
-  isOnBoarded  Boolean @default(false)
+  email         String  @unique
+  phone         String?
+  passwordHash  String?
+  googleId      String?
+  role          Role[]  @default([USER])
+  isOnBoarded   Boolean @default(false)
 
   resetToken       String?
   resetTokenExpiry DateTime?
@@ -44,19 +44,20 @@ model User {
   quizzes QuizParticipant[] // student quizzes
   // requests Request[] // student requests to join quiz
 
-  adminOf Group[] @relation("GroupAdmin")
-  quizCollaborations QuizCollaborator[] @relation("QuizCollaboratorUser")
+  adminOf                 Group[]            @relation("GroupAdmin")
+  quizCollaborations      QuizCollaborator[] @relation("QuizCollaboratorUser")
   quizCollaborationsAdded QuizCollaborator[] @relation("QuizCollaboratorAddedBy")
-  imageLibrary UserImage[]
+  imageLibrary            UserImage[]
 
   @@map("users")
 }
 
 model Group {
-  id   String  @id @default(auto()) @map("_id") @db.ObjectId
-  slug String? @unique
-  name String
-  desc String
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  slug          String?  @unique
+  previousSlugs String[] @default([])
+  name          String
+  desc          String
 
   quizzes Quiz[] @relation("GroupQuizzes")
   adminId String @db.ObjectId
@@ -121,15 +122,15 @@ model ParticipantQuizAnswer {
 }
 
 model Quiz {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
   // Optional during migration; new quizzes always receive a stable URL slug.
-  slug       String?  @unique
+  slug          String?  @unique
   previousSlugs String[] @default([])
-  title      String
-  desc       String?
-  duration   Int?
-  maxMarks   Int?
-  userInputs String[]
+  title         String
+  desc          String?
+  duration      Int?
+  maxMarks      Int?
+  userInputs    String[]
 
   isStrictMode       Boolean @default(false)
   translationEnabled Boolean @default(false)
@@ -146,22 +147,22 @@ model Quiz {
   groupId String @db.ObjectId
   group   Group  @relation("GroupQuizzes", fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  participants QuizParticipant[]
-  questions    Question[]
-  images       Image[]
+  participants  QuizParticipant[]
+  questions     Question[]
+  images        Image[]
   collaborators QuizCollaborator[]
 
-  createdAt DateTime @default(now())
-  published Boolean  @default(false)
+  createdAt   DateTime  @default(now())
+  published   Boolean   @default(false)
   publishedAt DateTime?
 
   // Shared availability affects every participant. This is separate from
   // `duration`, which remains the per-participant attempt timer.
-  availabilityMode             QuizAvailabilityMode @default(ALWAYS)
-  availabilityDurationMinutes  Int?
-  availabilityStartedAt        DateTime?
-  availabilityStartsAt         DateTime?
-  availabilityEndsAt           DateTime?
+  availabilityMode            QuizAvailabilityMode @default(ALWAYS)
+  availabilityDurationMinutes Int?
+  availabilityStartedAt       DateTime?
+  availabilityStartsAt        DateTime?
+  availabilityEndsAt          DateTime?
 
   @@unique([groupId, title])
   @@index([groupId, createdAt])
@@ -210,9 +211,8 @@ model Image {
   @@map("images")
 }
 
-
 // A quiz is shared by adding collaborators; its primary admin is always
-// derived from the owner of the quiz's group and is never stored as removable data.
+// derived from the owner of the quiz's folder and is never stored as removable data.
 model QuizCollaborator {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   quizId    String   @db.ObjectId

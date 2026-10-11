@@ -25,15 +25,20 @@ export async function GET() {
     const groupIds = groups.map((group) => group.id);
     const sharedQuizIds = sharedQuizzes.map((quiz) => quiz.quizId);
     const accessibleQuizzes = await prisma.quiz.findMany({
-      where: { OR: [
-        ...(groupIds.length ? [{ groupId: { in: groupIds } }] : []),
-        ...(sharedQuizIds.length ? [{ id: { in: sharedQuizIds } }] : []),
-      ] },
+      where: {
+        OR: [
+          ...(groupIds.length ? [{ groupId: { in: groupIds } }] : []),
+          ...(sharedQuizIds.length ? [{ id: { in: sharedQuizIds } }] : []),
+        ],
+      },
       select: { id: true },
     });
     const quizIds = accessibleQuizzes.map((quiz) => quiz.id);
     if (quizIds.length) {
-      const attachedImages = await prisma.image.findMany({ where: { quizId: { in: quizIds } }, select: { publicId: true, url: true } });
+      const attachedImages = await prisma.image.findMany({
+        where: { quizId: { in: quizIds } },
+        select: { publicId: true, url: true },
+      });
       for (const image of attachedImages) {
         if (!image.publicId || !image.url) continue;
         await prisma.userImage.upsert({
@@ -51,20 +56,37 @@ export async function GET() {
     });
     const currentUser = await prisma.user.findUnique({ where: { id: userId }, select: { image: true } });
     const library = storedLibrary;
-    const profileReferences = library.length ? await prisma.user.findMany({ where: { image: { in: library.map((image) => image.url) } }, select: { image: true } }) : [];
+    const profileReferences = library.length
+      ? await prisma.user.findMany({ where: { image: { in: library.map((image) => image.url) } }, select: { image: true } })
+      : [];
     const profileUsageByUrl = new Map<string, number>();
-    for (const reference of profileReferences) if (reference.image) profileUsageByUrl.set(reference.image, (profileUsageByUrl.get(reference.image) ?? 0) + 1);
+    for (const reference of profileReferences)
+      if (reference.image) profileUsageByUrl.set(reference.image, (profileUsageByUrl.get(reference.image) ?? 0) + 1);
     const publicIds = library.map((image) => image.publicId);
-    const references = publicIds.length ? await prisma.image.findMany({
-      where: { publicId: { in: publicIds } },
-      select: { publicId: true, quiz: { select: { id: true, slug: true, title: true, group: { select: { adminId: true } }, collaborators: { where: { userId }, select: { id: true } } } } },
-    }) : [];
+    const references = publicIds.length
+      ? await prisma.image.findMany({
+          where: { publicId: { in: publicIds } },
+          select: {
+            publicId: true,
+            quiz: {
+              select: {
+                id: true,
+                slug: true,
+                title: true,
+                group: { select: { adminId: true } },
+                collaborators: { where: { userId }, select: { id: true } },
+              },
+            },
+          },
+        })
+      : [];
     const visibleReferences = new Map<string, { id: string; slug: string | null; title: string }[]>();
     for (const reference of references) {
       const list = visibleReferences.get(reference.publicId) ?? [];
       // Do not disclose quiz titles to a library owner unless they have access to that quiz.
       if (reference.quiz.group.adminId === userId || reference.quiz.collaborators.length > 0) {
-        if (!list.some((item) => item.id === reference.quiz.id)) list.push({ id: reference.quiz.id, slug: reference.quiz.slug, title: reference.quiz.title });
+        if (!list.some((item) => item.id === reference.quiz.id))
+          list.push({ id: reference.quiz.id, slug: reference.quiz.slug, title: reference.quiz.title });
       }
       visibleReferences.set(reference.publicId, list);
     }
@@ -74,10 +96,22 @@ export async function GET() {
       quizIds.add(reference.quiz.id);
       usageByPublicId.set(reference.publicId, quizIds);
     }
-    const data = library.map((image) => ({ ...image, usageCount: usageByPublicId.get(image.publicId)?.size ?? 0, profileUsageCount: profileUsageByUrl.get(image.url) ?? 0, usedIn: visibleReferences.get(image.publicId) ?? [] }))
+    const data = library
+      .map((image) => ({
+        ...image,
+        usageCount: usageByPublicId.get(image.publicId)?.size ?? 0,
+        profileUsageCount: profileUsageByUrl.get(image.url) ?? 0,
+        usedIn: visibleReferences.get(image.publicId) ?? [],
+      }))
       // Profile-only uploads are stored separately. Hide legacy assets still
       // referenced as a profile picture unless they are also used by a quiz.
-      .filter((image) => !(image.usageCount === 0 && ((currentUser?.image && image.url === currentUser.image) || image.profileUsageCount > 0)));
+      .filter(
+        (image) =>
+          !(
+            image.usageCount === 0 &&
+            ((currentUser?.image && image.url === currentUser.image) || image.profileUsageCount > 0)
+          ),
+      );
     return NextResponse.json({ ok: true, data }, { status: 200 });
   } catch (error) {
     console.error("GET /api/image failed:", error);
@@ -120,7 +154,10 @@ export async function POST(request: NextRequest) {
     });
     const result = await response.json();
     if (!response.ok) {
-      return NextResponse.json({ ok: false, error: result?.error?.message || "Image upload failed." }, { status: response.status });
+      return NextResponse.json(
+        { ok: false, error: result?.error?.message || "Image upload failed." },
+        { status: response.status },
+      );
     }
 
     const publicId = typeof result?.public_id === "string" ? result.public_id : "";
@@ -147,13 +184,22 @@ export async function DELETE(request: NextRequest) {
   try {
     const userId = await getSessionUserId();
     if (!userId) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-    const publicIds = Array.from(new Set((request.nextUrl.searchParams.get("public_ids") || "")
-      .split(",").map((value) => value.trim()).filter(Boolean)));
+    const publicIds = Array.from(
+      new Set(
+        (request.nextUrl.searchParams.get("public_ids") || "")
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean),
+      ),
+    );
     if (!publicIds.length || publicIds.length > 20) {
       return NextResponse.json({ ok: false, error: "Provide between 1 and 20 image IDs." }, { status: 400 });
     }
 
-    const owned = await prisma.userImage.findMany({ where: { userId, publicId: { in: publicIds } }, select: { publicId: true, url: true } });
+    const owned = await prisma.userImage.findMany({
+      where: { userId, publicId: { in: publicIds } },
+      select: { publicId: true, url: true },
+    });
     const ownedIds = new Set(owned.map((image) => image.publicId));
     if (publicIds.some((publicId) => !ownedIds.has(publicId))) {
       return NextResponse.json({ ok: false, error: "One or more images are not in your library." }, { status: 403 });
@@ -164,8 +210,13 @@ export async function DELETE(request: NextRequest) {
       where: { publicId: { in: publicIds } },
       select: { publicId: true, quizId: true },
     });
-    const profileReferences = await prisma.user.findMany({ where: { image: { in: owned.map((image) => image.url) } }, select: { image: true } });
-    const profileUrlsInUse = new Set(profileReferences.map((user) => user.image).filter((url): url is string => Boolean(url)));
+    const profileReferences = await prisma.user.findMany({
+      where: { image: { in: owned.map((image) => image.url) } },
+      select: { image: true },
+    });
+    const profileUrlsInUse = new Set(
+      profileReferences.map((user) => user.image).filter((url): url is string => Boolean(url)),
+    );
     if (quizReferences.length) {
       const quizIdsByImage = new Map<string, Set<string>>();
       for (const reference of quizReferences) {
@@ -175,16 +226,26 @@ export async function DELETE(request: NextRequest) {
       }
       const blocked = publicIds.filter((publicId) => (quizIdsByImage.get(publicId)?.size ?? 0) > 0);
       if (blocked.length) {
-        return NextResponse.json({
-          ok: false,
-          error: "Images currently used by quizzes cannot be deleted. Remove them from every quiz using them first.",
-          inUse: blocked.map((publicId) => ({ publicId, count: quizIdsByImage.get(publicId)?.size ?? 0 })),
-        }, { status: 409 });
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "Images currently used by quizzes cannot be deleted. Remove them from every quiz using them first.",
+            inUse: blocked.map((publicId) => ({ publicId, count: quizIdsByImage.get(publicId)?.size ?? 0 })),
+          },
+          { status: 409 },
+        );
       }
     }
     const profileBlocked = owned.filter((image) => profileUrlsInUse.has(image.url));
     if (profileBlocked.length) {
-      return NextResponse.json({ ok: false, error: "This image is currently used as a profile picture. Change the profile picture before deleting the asset.", inUse: profileBlocked.map((image) => ({ publicId: image.publicId, profile: true })) }, { status: 409 });
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "This image is currently used as a profile picture. Change the profile picture before deleting the asset.",
+          inUse: profileBlocked.map((image) => ({ publicId: image.publicId, profile: true })),
+        },
+        { status: 409 },
+      );
     }
     await prisma.userImage.deleteMany({ where: { userId, publicId: { in: publicIds } } });
     // The Cloudinary helper skips any asset still referenced by a quiz or by
@@ -193,12 +254,23 @@ export async function DELETE(request: NextRequest) {
     if (!cleanup.ok) {
       // Preserve the library rows if storage deletion failed, so users never lose
       // their reusable asset reference due to a partial infrastructure failure.
-      await Promise.all(owned.map((image) => prisma.userImage.upsert({
-        where: { userId_publicId: { userId, publicId: image.publicId } },
-        update: { url: image.url },
-        create: { userId, publicId: image.publicId, url: image.url },
-      })));
-      return NextResponse.json({ ok: false, error: "The image could not be deleted from storage, so it remains in your library. Check Cloudinary configuration and try again." }, { status: 502 });
+      await Promise.all(
+        owned.map((image) =>
+          prisma.userImage.upsert({
+            where: { userId_publicId: { userId, publicId: image.publicId } },
+            update: { url: image.url },
+            create: { userId, publicId: image.publicId, url: image.url },
+          }),
+        ),
+      );
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "The image could not be deleted from storage, so it remains in your library. Check Cloudinary configuration and try again.",
+        },
+        { status: 502 },
+      );
     }
     const warning = cleanup.preservedIds?.length
       ? "Removed from your library. The underlying asset was kept because another quiz or library still references it."

@@ -83,7 +83,10 @@ const EditQuizPage = ({ params }: PageProps) => {
         }
 
         const quiz = res.data as IQuiz & { legacyRedirectSlug?: string };
-        if (quiz.legacyRedirectSlug) { router.replace(`/quiz/${quiz.legacyRedirectSlug}/edit`); return; }
+        if (quiz.legacyRedirectSlug) {
+          router.replace(`/quiz/${quiz.legacyRedirectSlug}/edit`);
+          return;
+        }
         setData(quiz);
         setQuizName(quiz.title || "");
         setInputs(quiz.userInputs || []);

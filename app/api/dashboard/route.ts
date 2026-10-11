@@ -254,6 +254,7 @@ export async function GET(request: NextRequest) {
               Quiz: {
                 select: {
                   id: true,
+                  slug: true,
                   title: true,
                   _count: { select: { questions: true } },
                 },
@@ -292,7 +293,7 @@ export async function GET(request: NextRequest) {
       .slice(0, 5)
       .map((participant) => scoreParticipant(participant, answerKeyByQuestion));
 
-    // Keep each student once, using their best quiz result in the current date/group scope.
+    // Keep each student once, using their best quiz result in the current date/folder scope.
     // Percentages are comparable accuracy scores because the schema does not store score marks.
     const bestScoreByUser = new Map<string, { userId: string; score: ReturnType<typeof scoreParticipant> }>();
     for (const participant of participantsInRange) {

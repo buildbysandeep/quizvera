@@ -77,12 +77,33 @@ export default function DashboardShell({ children, session }: DashboardShellProp
   };
 
   return (
-    <div className="grid min-h-screen w-full grid-cols-1 md:grid-cols-[var(--sidebar-width)_minmax(0,1fr)]" style={{ "--sidebar-width": `${sidebarMini ? 76 : sidebarWidth}px` } as React.CSSProperties}>
+    <div
+      className="grid min-h-screen w-full grid-cols-1 md:grid-cols-[var(--sidebar-width)_minmax(0,1fr)]"
+      style={{ "--sidebar-width": `${sidebarMini ? 76 : sidebarWidth}px` } as React.CSSProperties}
+    >
       <aside className="sticky top-0 hidden h-screen min-h-0 border-r border-slate-200 bg-white md:block">
         <Sidenav collapsed={sidebarMini} onToggleCollapsed={() => setSidebarMini((current) => !current)} />
       </aside>
       <div className="relative flex min-w-0 flex-col">
-        {!sidebarMini && <div role="separator" aria-label="Resize sidebar" aria-orientation="vertical" aria-valuemin={MIN_WIDTH} aria-valuemax={MAX_WIDTH} aria-valuenow={sidebarWidth} tabIndex={0} onPointerDown={startResizing} onKeyDown={handleResizeKey} className={`absolute -left-1.5 top-0 z-30 hidden h-full w-3 cursor-col-resize touch-none items-center justify-center outline-none md:flex ${resizing ? "bg-indigo-100/50" : "hover:bg-indigo-50/70"}`} title="Drag to resize the sidebar; use arrow keys when focused"><span className={`h-10 w-1 rounded-full transition-colors ${resizing ? "bg-indigo-500" : "bg-slate-300 hover:bg-indigo-400"}`} /></div>}
+        {!sidebarMini && (
+          <div
+            role="separator"
+            aria-label="Resize sidebar"
+            aria-orientation="vertical"
+            aria-valuemin={MIN_WIDTH}
+            aria-valuemax={MAX_WIDTH}
+            aria-valuenow={sidebarWidth}
+            tabIndex={0}
+            onPointerDown={startResizing}
+            onKeyDown={handleResizeKey}
+            className={`absolute -left-1.5 top-0 z-30 hidden h-full w-3 cursor-col-resize touch-none items-center justify-center outline-none md:flex ${resizing ? "bg-indigo-100/50" : "hover:bg-indigo-50/70"}`}
+            title="Drag to resize the sidebar; use arrow keys when focused"
+          >
+            <span
+              className={`h-10 w-1 rounded-full transition-colors ${resizing ? "bg-indigo-500" : "bg-slate-300 hover:bg-indigo-400"}`}
+            />
+          </div>
+        )}
         <Header session={session} />
         <main className="flex min-w-0 flex-1 flex-col gap-4 xs:p-2 lg:gap-6 lg:p-4">
           <AuthProvider session={session}>{children}</AuthProvider>

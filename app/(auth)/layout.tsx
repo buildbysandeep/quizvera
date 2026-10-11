@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 // @ts-ignore
 import "../globals.css";
 import Image from "next/image";
-import background from "@/app/assets/quiz.webp";
+import logo from "@/app/assets/logo-small.png";
 import { SiPlatformdotsh } from "react-icons/si";
 import { ArrowUpRight, BookOpenCheck, ChartNoAxesCombined, ShieldCheck } from "lucide-react";
 import Link from "next/link";
@@ -33,16 +33,16 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <div className="grid min-h-screen lg:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)]">
             {/* Brand panel */}
             <section className="relative hidden min-h-screen flex-col overflow-hidden bg-slate-950 px-10 py-9 text-white lg:flex xl:px-14">
-              <Image src={background} alt="" fill priority sizes="55vw" className="object-cover opacity-[0.16]" />
               <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-950/95 to-indigo-950/90" />
               <div className="absolute -left-24 top-1/3 h-80 w-80 rounded-full bg-indigo-600/20 blur-3xl" />
               <div className="absolute -right-20 bottom-10 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
 
               <div className="relative z-10 flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-xl border border-white/15 bg-white/10 shadow-lg shadow-black/10">
+                {/* <div className="grid h-10 w-10 place-items-center rounded-xl border border-white/15 bg-white/10 shadow-lg shadow-black/10">
                   <SiPlatformdotsh className="h-5 w-5" />
-                </div>
-                <span className="text-lg font-semibold tracking-tight">Quizvera</span>
+                </div> */}
+                {/* <span className="text-lg font-semibold tracking-tight">Quizvera</span> */}
+                <Image src={logo} width={50} height={50} alt="Quizvera logo" />
                 <span className="ml-1 rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-indigo-200">
                   Workspace
                 </span>

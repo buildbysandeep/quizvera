@@ -20,6 +20,6 @@ export const useGroups = () => {
   return {
     groups: (groups.length ? groups : Array.isArray(data?.data) ? data.data : []) as IGroup[],
     isLoading,
-    error: error ?? (data && !data.ok ? data.error || "Could not load groups." : null),
+    error: error ?? (data && !data.ok ? data.error || "Could not load folders." : null),
   };
 };

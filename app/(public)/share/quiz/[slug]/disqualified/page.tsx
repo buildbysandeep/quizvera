@@ -11,5 +11,13 @@ export default function QuizDisqualifiedPage({ searchParams }: { searchParams: S
     : lostFocus
       ? "The quiz was configured for strict mode, and the browser window lost focus during the attempt."
       : "The attempt was marked as disqualified by the quiz rules.";
-  return <QuizStatusPage tone="danger" eyebrow="Attempt disqualified" title="Quiz attempt disqualified" description="This attempt has been marked as disqualified under the quiz rules." detail={detail} />;
+  return (
+    <QuizStatusPage
+      tone="danger"
+      eyebrow="Attempt disqualified"
+      title="Quiz attempt disqualified"
+      description="This attempt has been marked as disqualified under the quiz rules."
+      detail={detail}
+    />
+  );
 }

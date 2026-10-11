@@ -36,7 +36,9 @@ export default function QuizAdmins({ quizId }: { quizId: string }) {
     }
   }, [quizId]);
 
-  useEffect(() => { if (open) void loadAdmins(); }, [open, loadAdmins]);
+  useEffect(() => {
+    if (open) void loadAdmins();
+  }, [open, loadAdmins]);
 
   const addAdmin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -73,18 +75,118 @@ export default function QuizAdmins({ quizId }: { quizId: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button type="button" variant="outline" size="sm" className="gap-2 rounded-lg"><Users className="h-4 w-4" /> Quiz admins</Button></DialogTrigger>
+      <DialogTrigger asChild>
+        <Button type="button" variant="outline" size="sm" className="gap-2 rounded-lg">
+          <Users className="h-4 w-4" /> Quiz admins
+        </Button>
+      </DialogTrigger>
       <DialogContent className="max-h-[85vh] w-[calc(100%-1.25rem)] max-w-xl overflow-y-auto rounded-2xl p-5 sm:p-6">
-        <DialogHeader><DialogTitle>Quiz admins</DialogTitle><DialogDescription>Share access with another existing Quizvera account. The primary admin who created this quiz is permanent and cannot be removed.</DialogDescription></DialogHeader>
-        {isLoading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-indigo-600" /></div> : <>
-          <section className="rounded-xl border border-indigo-200 bg-indigo-50/70 p-4">
-            <div className="flex items-start gap-3"><div className="grid h-9 w-9 place-items-center rounded-lg bg-indigo-600 text-white"><ShieldCheck className="h-4 w-4" /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold text-slate-900">{mainAdmin?.name || "Primary admin"}</p><span className="rounded-full border border-indigo-200 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-700">Primary admin</span></div><p className="mt-1 break-all text-xs text-slate-600">{mainAdmin?.email}</p><p className="mt-2 text-[11px] text-slate-500">Always retains access; cannot be removed from this quiz.</p></div></div>
-          </section>
-          <section className="space-y-3"><div className="flex items-center justify-between"><h3 className="text-sm font-semibold text-slate-900">Shared admins</h3><span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{collaborators.length}</span></div>
-            {collaborators.length === 0 ? <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500">No other admins have access yet.</p> : <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">{collaborators.map((person) => <div key={person.userId} className="flex items-center gap-3 p-3"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">{(person.name || person.email).slice(0, 1).toUpperCase()}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-slate-900">{person.name || "Quizvera user"}</p><p className="break-all text-xs text-slate-500">{person.email}</p></div>{canManage ? <Button type="button" variant="ghost" size="icon" disabled={removingUserId === person.userId} onClick={() => void removeAdmin(person)} aria-label={`Remove ${person.email}`} className="shrink-0 text-slate-500 hover:bg-rose-50 hover:text-rose-700">{removingUserId === person.userId ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}</Button> : null}</div>)}</div>}
-          </section>
-          {canManage ? <form onSubmit={addAdmin} className="space-y-3 border-t border-slate-200 pt-4"><label htmlFor="quiz-admin-email" className="text-sm font-semibold text-slate-900">Share with a Quizvera account</label><div className="flex flex-col gap-2 sm:flex-row"><Input id="quiz-admin-email" type="email" autoComplete="email" placeholder="teammate@example.com" value={email} onChange={(event) => setEmail(event.target.value)} maxLength={254} required className="rounded-xl" /><Button type="submit" disabled={isSaving} className="gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700">{isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />} Add admin</Button></div><p className="text-[11px] leading-5 text-slate-500">Only the primary admin can add or remove collaborators. The invitee must already have a Quizvera account.</p></form> : <p className="rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-500">Only the primary admin can change the admin list.</p>}
-        </>}
+        <DialogHeader>
+          <DialogTitle>Quiz admins</DialogTitle>
+          <DialogDescription>
+            Share access with another existing Quizvera account. The primary admin who created this quiz is permanent and
+            cannot be removed.
+          </DialogDescription>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
+          </div>
+        ) : (
+          <>
+            <section className="rounded-xl border border-indigo-200 bg-indigo-50/70 p-4">
+              <div className="flex items-start gap-3">
+                <div className="grid h-9 w-9 place-items-center rounded-lg bg-indigo-600 text-white">
+                  <ShieldCheck className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-slate-900">{mainAdmin?.name || "Primary admin"}</p>
+                    <span className="rounded-full border border-indigo-200 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-700">
+                      Primary admin
+                    </span>
+                  </div>
+                  <p className="mt-1 break-all text-xs text-slate-600">{mainAdmin?.email}</p>
+                  <p className="mt-2 text-[11px] text-slate-500">Always retains access; cannot be removed from this quiz.</p>
+                </div>
+              </div>
+            </section>
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-slate-900">Shared admins</h3>
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+                  {collaborators.length}
+                </span>
+              </div>
+              {collaborators.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500">
+                  No other admins have access yet.
+                </p>
+              ) : (
+                <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+                  {collaborators.map((person) => (
+                    <div key={person.userId} className="flex items-center gap-3 p-3">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
+                        {(person.name || person.email).slice(0, 1).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-slate-900">{person.name || "Quizvera user"}</p>
+                        <p className="break-all text-xs text-slate-500">{person.email}</p>
+                      </div>
+                      {canManage ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={removingUserId === person.userId}
+                          onClick={() => void removeAdmin(person)}
+                          aria-label={`Remove ${person.email}`}
+                          className="shrink-0 text-slate-500 hover:bg-rose-50 hover:text-rose-700"
+                        >
+                          {removingUserId === person.userId ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+            {canManage ? (
+              <form onSubmit={addAdmin} className="space-y-3 border-t border-slate-200 pt-4">
+                <label htmlFor="quiz-admin-email" className="text-sm font-semibold text-slate-900">
+                  Share with a Quizvera account
+                </label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Input
+                    id="quiz-admin-email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="teammate@example.com"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    maxLength={254}
+                    required
+                    className="rounded-xl"
+                  />
+                  <Button type="submit" disabled={isSaving} className="gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700">
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />} Add admin
+                  </Button>
+                </div>
+                <p className="text-[11px] leading-5 text-slate-500">
+                  Only the primary admin can add or remove collaborators. The invitee must already have a Quizvera account.
+                </p>
+              </form>
+            ) : (
+              <p className="rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-500">
+                Only the primary admin can change the admin list.
+              </p>
+            )}
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

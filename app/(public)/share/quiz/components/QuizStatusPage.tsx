@@ -18,7 +18,10 @@ type Props = {
   primaryHref?: string;
 };
 
-const toneStyles: Record<Tone, { icon: React.ComponentType<{ className?: string }>; iconWrap: string; accent: string; badge: string }> = {
+const toneStyles: Record<
+  Tone,
+  { icon: React.ComponentType<{ className?: string }>; iconWrap: string; accent: string; badge: string }
+> = {
   success: {
     icon: CheckCircle2,
     iconWrap: "bg-emerald-50 text-emerald-600 ring-emerald-100",
@@ -67,7 +70,9 @@ const QuizStatusPage = ({ tone, eyebrow, title, description, detail, primaryLabe
             <Icon className="h-7 w-7" />
           </div>
 
-          <span className={`mt-5 inline-flex rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${styles.badge}`}>
+          <span
+            className={`mt-5 inline-flex rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${styles.badge}`}
+          >
             {eyebrow}
           </span>
 

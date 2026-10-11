@@ -19,6 +19,7 @@ export async function GET() {
         quizzes: {
           select: {
             id: true,
+            slug: true,
             title: true,
             desc: true,
             published: true,

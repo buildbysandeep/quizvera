@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { getOwnedQuiz } from "@/lib/authorization";
+import { getAccessibleQuiz } from "@/lib/authorization";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       },
     });
     if (!participant) return NextResponse.json({ ok: false, error: "Participant not found." }, { status: 404 });
-    if (!(await getOwnedQuiz(participant.quizId, adminId))) {
+    if (!(await getAccessibleQuiz(participant.quizId, adminId))) {
       return NextResponse.json({ ok: false, error: "You cannot email participants for this quiz." }, { status: 403 });
     }
 

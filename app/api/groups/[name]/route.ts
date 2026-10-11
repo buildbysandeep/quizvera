@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
           orderBy: { createdAt: "desc" },
           select: {
             id: true,
+            slug: true,
             title: true,
             desc: true,
             published: true,

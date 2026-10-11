@@ -23,11 +23,11 @@ import { AlertTriangle, ArrowRight, CheckCircle2, FileWarning, ShieldCheck, Wifi
 import { Button } from "@/components/ui/button";
 import { QuizSubmit } from "@/components/dialogs/QuizSubmit";
 
-const Page = ({ params }: { params: { id: string } }) => {
+const Page = ({ params }: { params: { slug: string } }) => {
   const router = useRouter();
   const [user, setUser] = React.useState<IUser | null>(null);
   const [attemptToken, setAttemptToken] = React.useState<string | null>(null);
-  const { data, isLoading, error: requestError } = useSWR(`/api/quiz/share/${params.id}`, fetcher, fetcherOpt);
+  const { data, isLoading, error: requestError } = useSWR(`/api/quiz/share/${params.slug}`, fetcher, fetcherOpt);
   const [answers, setAnswers] = React.useState<IParticipantQuizAnswer[]>([]);
   const [quizInputs, setQuizInputs] = React.useState<{ key: string; value: string }[]>([]);
   const [openTimeOutDialog, setOpenTimeOutDialog] = React.useState(false);
@@ -67,7 +67,7 @@ const Page = ({ params }: { params: { id: string } }) => {
         return;
       }
       if (hasEnteredFullScreen.current) {
-        void disqualify("You have exited full-screen mode!", "/share/quiz/disqualified?exitFullScreen=true");
+        void disqualify("You have exited full-screen mode!", `/share/quiz/${data.quiz.slug || params.slug}/disqualified?exitFullScreen=true`);
       }
     };
 
@@ -75,7 +75,7 @@ const Page = ({ params }: { params: { id: string } }) => {
       if (!hasEnteredFullScreen.current) return;
       void disqualify(
         "You switched away from the quiz! Possible reason: Tried to switch tabs or minimize the browser.",
-        "/share/quiz/disqualified?lostFocus=true",
+        `/share/quiz/${data.quiz.slug || params.slug}/disqualified?lostFocus=true`,
       );
     };
 
@@ -92,11 +92,18 @@ const Page = ({ params }: { params: { id: string } }) => {
 
   useEffect(() => {
     if (data?.ok && data?.quiz && !data.quiz.published) {
-      router.replace(`/share/quiz/expired?quizId=${data.quiz.id}`);
+      router.replace(`/share/quiz/${data.quiz.slug || params.slug}/expired`);
     }
   }, [data, router]);
 
   useWakeLock(Boolean(user));
+
+  useEffect(() => {
+    const canonicalSlug = data?.quiz?.slug;
+    if (data?.ok && canonicalSlug && canonicalSlug !== params.slug) {
+      router.replace(`/share/quiz/${canonicalSlug}`);
+    }
+  }, [data, params.slug, router]);
 
   if (isLoading) {
     return (
@@ -148,6 +155,7 @@ const Page = ({ params }: { params: { id: string } }) => {
         groupId={quiz.groupId}
         userId={user?.id ?? ""}
         attemptToken={attemptToken ?? ""}
+        quizSlug={quiz.slug || params.slug}
       />
       <CountDown
         duration={Number(quiz.duration ?? 0) * 60}
@@ -191,6 +199,7 @@ const Page = ({ params }: { params: { id: string } }) => {
                     quizId={quiz.id}
                     groupId={quiz.groupId}
                     attemptToken={attemptToken ?? ""}
+                    quizSlug={quiz.slug || params.slug}
                   />
                 </div>
               </section>
@@ -268,7 +277,7 @@ const Page = ({ params }: { params: { id: string } }) => {
                     <p className="text-xs leading-5 text-slate-500">
                       You will be asked to register before the timer starts.
                     </p>
-                    <UserRegistration visible={isAgreementChecked} setUser={setUser} setAttemptToken={setAttemptToken} quizId={quiz.id} />
+                    <UserRegistration visible={isAgreementChecked} setUser={setUser} setAttemptToken={setAttemptToken} quizId={quiz.id} quizSlug={quiz.slug || params.slug} />
                   </div>
                 </div>
               </div>

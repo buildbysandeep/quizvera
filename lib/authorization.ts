@@ -16,26 +16,52 @@ export async function userOwnsGroup(groupId: string, userId: string): Promise<bo
   return Boolean(group);
 }
 
-/** Returns a quiz only when it belongs to a group owned by this user. */
+/** Strict owner check. Keep for destructive actions reserved for the primary admin. */
 export async function getOwnedQuiz(quizId: string, userId: string) {
   const quiz = await prisma.quiz.findUnique({
     where: { id: quizId },
-    select: { id: true, groupId: true },
+    select: { id: true, groupId: true, group: { select: { adminId: true } } },
   });
-  if (!quiz) return null;
-
-  const ownsGroup = await userOwnsGroup(quiz.groupId, userId);
-  return ownsGroup ? quiz : null;
+  if (!quiz || quiz.group.adminId !== userId) return null;
+  return { id: quiz.id, groupId: quiz.groupId, mainAdminId: quiz.group.adminId };
 }
 
-/** Returns a question only when its parent quiz belongs to a group owned by this user. */
-export async function getOwnedQuestion(questionId: string, userId: string) {
+/** Returns quiz access for either the primary admin or an explicitly added collaborator. */
+export async function getAccessibleQuiz(quizId: string, userId: string) {
+  const quiz = await prisma.quiz.findUnique({
+    where: { id: quizId },
+    select: {
+      id: true,
+      groupId: true,
+      group: { select: { adminId: true } },
+      collaborators: { where: { userId }, select: { id: true } },
+    },
+  });
+  if (!quiz) return null;
+  const isMainAdmin = quiz.group.adminId === userId;
+  if (!isMainAdmin && quiz.collaborators.length === 0) return null;
+  return { id: quiz.id, groupId: quiz.groupId, mainAdminId: quiz.group.adminId, isMainAdmin };
+}
+
+/** Returns a question only when its parent quiz is accessible by this user. */
+export async function getAccessibleQuestion(questionId: string, userId: string) {
   const question = await prisma.question.findUnique({
     where: { id: questionId },
     select: { id: true, quizId: true },
   });
   if (!question) return null;
 
+  const quiz = await getAccessibleQuiz(question.quizId, userId);
+  return quiz ? { ...question, groupId: quiz.groupId, isMainAdmin: quiz.isMainAdmin } : null;
+}
+
+/** Owner-only question helper retained for code paths that require primary ownership. */
+export async function getOwnedQuestion(questionId: string, userId: string) {
+  const question = await prisma.question.findUnique({
+    where: { id: questionId },
+    select: { id: true, quizId: true },
+  });
+  if (!question) return null;
   const quiz = await getOwnedQuiz(question.quizId, userId);
   return quiz ? { ...question, groupId: quiz.groupId } : null;
 }

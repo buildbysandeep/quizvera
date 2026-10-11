@@ -24,9 +24,11 @@ export function UserRegistration({
   setUser,
   setAttemptToken,
   quizId,
+  quizSlug,
 }: {
   visible: boolean;
   quizId: string;
+  quizSlug: string;
   setUser: React.Dispatch<React.SetStateAction<IUser | null>>;
   setAttemptToken: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
@@ -58,11 +60,11 @@ export function UserRegistration({
         return;
       }
       if (result.isSubmitted) {
-        router.replace(`/share/quiz/sb?quizId=${quizId}`);
+        router.replace(`/share/quiz/${quizSlug}/result`);
         return;
       }
       if (result.isDisqualified) {
-        router.replace(`/share/quiz/disqualified?quizId=${quizId}`);
+        router.replace(`/share/quiz/${quizSlug}/disqualified`);
         return;
       }
       if (result.data && result.attemptToken) {

@@ -96,7 +96,7 @@ export function TopScores({ scores }: TopScoresProps) {
                 </div>
 
                 <Link
-                  href={`/quiz?id=${score.quizId}`}
+                  href={`/quiz/${score.quizSlug || score.quizId}`}
                   className="mt-2 inline-flex max-w-full items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
                 >
                   <span className="truncate">Best result: {score.quizTitle}</span>

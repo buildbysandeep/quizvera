@@ -134,7 +134,7 @@ type ParticipantScoreSource = {
   participantName: string | null;
   participantEmail: string | null;
   User: { name: string | null; email: string };
-  Quiz: { id: string; title: string; _count: { questions: number } };
+  Quiz: { id: string; slug: string | null; title: string; _count: { questions: number } };
   Answers: { answer: string; questionId: string }[];
 };
 
@@ -160,6 +160,7 @@ function scoreParticipant(participant: ParticipantScoreSource, answerKeyByQuesti
     name: participant.participantName ?? participant.User.name ?? "Unknown participant",
     email: participant.participantEmail ?? participant.User.email,
     quizId: participant.Quiz.id,
+    quizSlug: participant.Quiz.slug,
     quizTitle: participant.Quiz.title,
     correctAnswers,
     answeredQuestions,

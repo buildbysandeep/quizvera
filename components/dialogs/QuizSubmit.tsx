@@ -18,6 +18,7 @@ type QuizSubmitProps = {
   quizId: string;
   groupId: string;
   attemptToken: string;
+  quizSlug: string;
 };
 
 const SUBMIT_TIMEOUT_MS = 15000;
@@ -32,7 +33,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   });
 }
 
-export function QuizSubmit({ user, quizInputs, userInputs, questions, answers, quizId, groupId, attemptToken }: QuizSubmitProps) {
+export function QuizSubmit({ user, quizInputs, userInputs, questions, answers, quizId, groupId, attemptToken, quizSlug }: QuizSubmitProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [open, setOpen] = React.useState(false);
@@ -58,7 +59,7 @@ export function QuizSubmit({ user, quizInputs, userInputs, questions, answers, q
       }
       success(result.timedOut ? "Time limit reached. Your recorded answers were saved." : "Quiz submitted successfully");
       setOpen(false);
-      router.replace(`/share/quiz/sb?quizId=${quizId}${result.timedOut ? "&timeOut=true" : ""}`);
+      router.replace(`/share/quiz/${quizSlug}/result${result.timedOut ? "?timeOut=true" : ""}`);
     } catch (err) {
       error(err instanceof Error && err.message === "TIMEOUT" ? "Request timed out. Check your connection and try again." : "Something went wrong. Please try again.", 3000, true);
     } finally {

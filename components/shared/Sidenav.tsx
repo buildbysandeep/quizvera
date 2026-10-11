@@ -9,6 +9,7 @@ import { fetcher, fetcherOpt, formatDate } from "@/lib/utils";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   BookOpenCheck,
+  Image as ImageIcon,
   Check,
   ChevronDown,
   Circle,
@@ -25,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 type SidebarQuiz = {
   id: string;
+  slug?: string | null;
   title: string;
   desc?: string | null;
   published?: boolean;
@@ -52,6 +54,7 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const routeId = searchParams.get("id");
+  const quizSlug = pathname.startsWith("/quiz/") ? pathname.split("/")[2] : null;
   const groupQueryId = searchParams.get("group");
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [miniOpenGroupId, setMiniOpenGroupId] = useState<string | null>(null);
@@ -66,9 +69,11 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
 
   const isDashboardActive = pathname === "/";
   const isMyQuizzesActive = pathname.startsWith("/my-quizes");
+  const isSharedQuizzesActive = pathname.startsWith("/shared-quizzes");
+  const isImageLibraryActive = pathname.startsWith("/image-library");
   const isGroupRoute = pathname.startsWith("/group");
   const isQuizRoute = pathname.startsWith("/quiz");
-  const activeQuizId = isQuizRoute && pathname !== "/quiz/create" ? routeId : null;
+  const activeQuizId = isQuizRoute && pathname !== "/quiz/create" ? (groups.flatMap((group) => group.quizzes ?? []).find((quiz) => quiz.slug === quizSlug)?.id ?? routeId) : null;
   const activeGroupId = isGroupRoute ? routeId : pathname === "/quiz/create" ? groupQueryId : null;
 
   const activeQuizGroupId = activeQuizId
@@ -179,6 +184,32 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
           {!collapsed && <span className="flex-1">My quizzes</span>}
           {!collapsed && isMyQuizzesActive && <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />}
           {collapsed && isMyQuizzesActive && <span className="absolute -left-2 h-6 w-1 rounded-r-full bg-indigo-600" />}
+        </Link>
+        <Link
+          href="/shared-quizzes"
+          title={collapsed ? "Shared with me" : undefined}
+          aria-label="Shared with me"
+          className={`group relative mt-1 flex items-center rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+            collapsed ? "mx-auto h-11 w-11 justify-center" : "gap-3 px-3 py-2.5"
+          } ${isSharedQuizzesActive ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"}`}
+        >
+          <Users className="h-[18px] w-[18px] shrink-0" />
+          {!collapsed && <span className="flex-1">Shared with me</span>}
+          {!collapsed && isSharedQuizzesActive && <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />}
+          {collapsed && isSharedQuizzesActive && <span className="absolute -left-2 h-6 w-1 rounded-r-full bg-indigo-600" />}
+        </Link>
+        <Link
+          href="/image-library"
+          title={collapsed ? "Image library" : undefined}
+          aria-label="Image library"
+          className={`group relative mt-1 flex items-center rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+            collapsed ? "mx-auto h-11 w-11 justify-center" : "gap-3 px-3 py-2.5"
+          } ${isImageLibraryActive ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"}`}
+        >
+          <ImageIcon className="h-[18px] w-[18px] shrink-0" />
+          {!collapsed && <span className="flex-1">Image library</span>}
+          {!collapsed && isImageLibraryActive && <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />}
+          {collapsed && isImageLibraryActive && <span className="absolute -left-2 h-6 w-1 rounded-r-full bg-indigo-600" />}
         </Link>
       </nav>
 
@@ -323,7 +354,7 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
                               return (
                                 <Link
                                   key={quiz.id}
-                                  href={`/quiz?id=${quiz.id}`}
+                                  href={`/quiz/${quiz.slug || quiz.id}`}
                                   onClick={() => setMiniOpenGroupId(null)}
                                   className={`flex min-w-0 items-start gap-2.5 rounded-xl px-2.5 py-2.5 transition-colors ${
                                     isQuizActive ? "bg-indigo-600 text-white" : "text-slate-700 hover:bg-slate-100"
@@ -425,7 +456,7 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
                         return (
                           <Link
                             key={quiz.id}
-                            href={`/quiz?id=${quiz.id}`}
+                            href={`/quiz/${quiz.slug || quiz.id}`}
                             title={quiz.title}
                             aria-label={`Open quiz ${quiz.title}`}
                             className={`group flex min-w-0 items-start gap-2 rounded-lg px-2 py-2 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${

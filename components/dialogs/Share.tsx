@@ -10,13 +10,13 @@ import { publishQuizDB, unPublishQuizDB } from "@/lib/actions/quiz.actions";
 import { error, success } from "@/lib/utils";
 import { IQuiz } from "@/types";
 
-export function PublishQuiz({ id, isPublished, setData }: { id: string; isPublished: boolean; setData: React.Dispatch<React.SetStateAction<IQuiz | null>> }) {
+export function PublishQuiz({ id, slug, isPublished, setData }: { id: string; slug: string; isPublished: boolean; setData: React.Dispatch<React.SetStateAction<IQuiz | null>> }) {
   const [open, setOpen] = React.useState(false);
   const [published, setPublished] = React.useState(isPublished);
   const [loading, setLoading] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  const shareUrl = `${appUrl || (typeof window !== "undefined" ? window.location.origin : "")}/share/quiz/${id}`;
+  const shareUrl = `${appUrl || (typeof window !== "undefined" ? window.location.origin : "")}/share/quiz/${slug}`;
 
   React.useEffect(() => setPublished(isPublished), [isPublished]);
 

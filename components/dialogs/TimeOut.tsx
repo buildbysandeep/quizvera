@@ -17,9 +17,10 @@ type TimeOutProps = {
   groupId: string;
   userId: string;
   attemptToken: string;
+  quizSlug: string;
 };
 
-const TimeOut = ({ open, answers, quizInputs, quizId, groupId, userId, attemptToken }: TimeOutProps) => {
+const TimeOut = ({ open, answers, quizInputs, quizId, groupId, userId, attemptToken, quizSlug }: TimeOutProps) => {
   const router = useRouter();
   const [isSaving, setIsSaving] = React.useState(false);
   const [saveFailed, setSaveFailed] = React.useState(false);
@@ -76,7 +77,7 @@ const TimeOut = ({ open, answers, quizInputs, quizId, groupId, userId, attemptTo
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
           <div className="flex items-center gap-2">{isSaving ? <Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> : null}<span>{isSaving ? "Saving your answers…" : saveFailed ? "Automatic save may have failed." : "Submission processed."}</span></div>
         </div>
-        <DialogFooter><Button type="button" onClick={() => router.replace(`/share/quiz/sb?quizId=${quizId}&timeOut=true`)} disabled={isSaving} className="rounded-xl bg-indigo-600 hover:bg-indigo-700">{isSaving ? "Please wait…" : "View result"}</Button></DialogFooter>
+        <DialogFooter><Button type="button" onClick={() => router.replace(`/share/quiz/${quizSlug}/result?timeOut=true`)} disabled={isSaving} className="rounded-xl bg-indigo-600 hover:bg-indigo-700">{isSaving ? "Please wait…" : "View result"}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );

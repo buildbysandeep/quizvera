@@ -36,6 +36,9 @@ model User {
   // requests Request[] // student requests to join quiz
 
   adminOf Group[] @relation("GroupAdmin")
+  quizCollaborations QuizCollaborator[] @relation("QuizCollaboratorUser")
+  quizCollaborationsAdded QuizCollaborator[] @relation("QuizCollaboratorAddedBy")
+  imageLibrary UserImage[]
 
   @@map("users")
 }
@@ -72,7 +75,7 @@ model QuizParticipant {
   anyReason        String?
   sentEmailId      String?
   User             User    @relation(fields: [userId], references: [id])
-  Quiz             Quiz    @relation(fields: [quizId], references: [id])
+  Quiz             Quiz    @relation(fields: [quizId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Group            Group   @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   Answers    ParticipantQuizAnswer[]
@@ -109,6 +112,8 @@ model ParticipantQuizAnswer {
 
 model Quiz {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  // Optional during migration; new quizzes always receive a stable URL slug.
+  slug       String?  @unique
   title      String
   desc       String?
   duration   Int?
@@ -133,6 +138,7 @@ model Quiz {
   participants QuizParticipant[]
   questions    Question[]
   images       Image[]
+  collaborators QuizCollaborator[]
 
   createdAt DateTime @default(now())
   published Boolean  @default(false)
@@ -182,4 +188,37 @@ model Image {
   quiz     Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@map("images")
+}
+
+
+// A quiz is shared by adding collaborators; its primary admin is always
+// derived from the owner of the quiz's group and is never stored as removable data.
+model QuizCollaborator {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  quizId    String   @db.ObjectId
+  userId    String   @db.ObjectId
+  addedById String   @db.ObjectId
+  Quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  User      User     @relation("QuizCollaboratorUser", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  AddedBy   User     @relation("QuizCollaboratorAddedBy", fields: [addedById], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([quizId, userId])
+  @@index([userId, createdAt])
+  @@map("quiz_collaborators")
+}
+
+// Personal Cloudinary library. Quiz image rows only reference the library item;
+// deleting a quiz must not delete a reusable user image.
+model UserImage {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  url       String
+  publicId  String
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, publicId])
+  @@index([userId, createdAt])
+  @@map("user_images")
 }

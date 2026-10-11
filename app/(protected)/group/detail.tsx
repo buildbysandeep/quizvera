@@ -228,7 +228,7 @@ const Detail = ({ id }: { id: string }) => {
             {filteredQuizzes.map((quiz) => (
               <Link
                 key={quiz.id}
-                href={`/quiz?id=${quiz.id}`}
+                href={`/quiz/${quiz.slug || quiz.id}`}
                 className="group relative flex min-h-[220px] min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-950/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
               >
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 via-violet-500 to-blue-400 opacity-0 transition-opacity group-hover:opacity-100" />

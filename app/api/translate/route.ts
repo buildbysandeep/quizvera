@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { translateQuestion } from "../generate/gemini";
-import { getOwnedQuiz } from "@/lib/authorization";
+import { getAccessibleQuiz } from "@/lib/authorization";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => null);
     const quizId = typeof body?.quizId === "string" ? body.quizId : "";
     const adminId = (session!.user as { id: string }).id;
-    if (!quizId || !(await getOwnedQuiz(quizId, adminId))) {
+    if (!quizId || !(await getAccessibleQuiz(quizId, adminId))) {
       return NextResponse.json({ ok: false, error: "Quiz not found or access denied." }, { status: 403 });
     }
     const fields = [body?.question, body?.o1, body?.o2, body?.o3, body?.o4];

@@ -16,6 +16,7 @@ export interface IGroup {
 
 export interface IQuiz {
   id: string;
+  slug?: string | null;
   title: string;
   desc: string;
   duration: number;
@@ -28,6 +29,10 @@ export interface IQuiz {
   footerLink: string;
   author: string;
   groupId: string;
+  groupName?: string;
+  mainAdminId?: string;
+  isMainAdmin?: boolean;
+  isCollaborator?: boolean;
   published: boolean;
 
   isStrictMode: boolean;

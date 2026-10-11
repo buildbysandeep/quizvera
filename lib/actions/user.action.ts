@@ -123,6 +123,7 @@ export const submitParticipantQuizDB = async ({
       where: { id: quizId },
       select: {
         id: true,
+        slug: true,
         groupId: true,
         published: true,
         duration: true,
@@ -131,8 +132,8 @@ export const submitParticipantQuizDB = async ({
       },
     });
 
-    if (!quiz) return { ok: false, error: "Quiz not found", redirectTo: `/share/quiz/expired?quizId=${quizId}` };
-    if (!quiz.published) return { ok: false, error: "This quiz is no longer accepting submissions.", redirectTo: `/share/quiz/expired?quizId=${quizId}` };
+    if (!quiz) return { ok: false, error: "Quiz not found." };
+    if (!quiz.published) return { ok: false, error: "This quiz is no longer accepting submissions.", redirectTo: `/share/quiz/${quiz.slug || quizId}/expired` };
     if (quiz.groupId !== groupId) return { ok: false, error: "Invalid quiz group." };
     if (!Array.isArray(answers) || !Array.isArray(quizInputs)) return { ok: false, error: "Invalid submission payload." };
     if (answers.length > quiz.questions.length || quizInputs.length > 20) return { ok: false, error: "Submission contains too much data." };
@@ -224,10 +225,10 @@ export const getQuizParticipantsDB = async ({ quizId }: { quizId: string }) => {
   // Imported lazily to keep this function's authorization check close to the
   // database query and avoid exposing participant records to another group.
   try {
-    const { getCurrentUserId, getOwnedQuiz } = await import("@/lib/authorization");
+    const { getCurrentUserId, getAccessibleQuiz } = await import("@/lib/authorization");
     const userId = await getCurrentUserId();
     if (!userId) return { ok: false, error: "You must be signed in." };
-    if (!(await getOwnedQuiz(quizId, userId))) return { ok: false, error: "Quiz not found or access denied." };
+    if (!(await getAccessibleQuiz(quizId, userId))) return { ok: false, error: "Quiz not found or access denied." };
 
     const participants = await prisma.quizParticipant.findMany({
       where: { quizId },

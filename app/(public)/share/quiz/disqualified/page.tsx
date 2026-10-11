@@ -1,35 +1,25 @@
-"use client";
+import QuizStatusPage from "../components/QuizStatusPage";
 
-import { Button } from "@/components/ui/button";
-import { exitFullScreen } from "@/lib/utils";
-import React, { useEffect, useState } from "react";
+type SearchParams = { exitFullScreen?: boolean | string; lostFocus?: boolean | string };
+const isTrue = (value?: boolean | string) => value === true || value === "true" || value === "1";
 
-const Page = ({ searchParams }: { searchParams: { exitFullScreen: boolean; lostFocus: boolean } }) => {
-  const [isFullScreen, setIsFullScreen] = useState(false);
+const Page = ({ searchParams }: { searchParams: SearchParams }) => {
+  const exitedFullScreen = isTrue(searchParams?.exitFullScreen);
+  const lostFocus = isTrue(searchParams?.lostFocus);
+  const detail = exitedFullScreen
+    ? "The quiz was configured for strict mode, and full-screen mode was exited during the attempt."
+    : lostFocus
+      ? "The quiz was configured for strict mode, and the browser window lost focus during the attempt."
+      : "The attempt was marked as disqualified by the quiz rules.";
 
-  useEffect(() => {
-    setIsFullScreen(!!document.fullscreenElement);
-  }, []);
   return (
-    <div className="w-full mx-auto max-w-6xl flex flex-col gap-5 items-center py-10">
-      <h1 className="text-3xl font-thin">Sorry!</h1>
-      <h2 className="text-xl font-thin">You have been disqualified</h2>
-      {searchParams.exitFullScreen && <h2 className="text-xl font-thin">You have exited full screen mode!</h2>}
-      {searchParams.lostFocus && <h2 className="text-xl font-thin">You switched away from the quiz!</h2>}
-
-      {isFullScreen && (
-        <Button
-          variant={"outline"}
-          className="w-fit"
-          onClick={() => {
-            exitFullScreen();
-            setIsFullScreen(false);
-          }}
-        >
-          Exit FullScreen
-        </Button>
-      )}
-    </div>
+    <QuizStatusPage
+      tone="danger"
+      eyebrow="Attempt disqualified"
+      title="Quiz attempt disqualified"
+      description="This attempt has been marked as disqualified under the quiz rules."
+      detail={detail}
+    />
   );
 };
 

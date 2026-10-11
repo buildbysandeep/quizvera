@@ -1,34 +1,13 @@
-"use client";
+import QuizStatusPage from "../components/QuizStatusPage";
 
-import { Button } from "@/components/ui/button";
-import { exitFullScreen } from "@/lib/utils";
-import React, { useEffect, useState } from "react";
-
-const Page = () => {
-  const [isFullScreen, setIsFullScreen] = useState(false);
-
-  useEffect(() => {
-    setIsFullScreen(!!document.fullscreenElement);
-  }, []);
-  return (
-    <div className="w-full mx-auto max-w-6xl flex flex-col gap-5 items-center py-10">
-      <h1 className="text-3xl font-thin">Sorry!</h1>
-      <h2 className="text-xl font-thin">Time limit exceeded!</h2>
-
-      {isFullScreen && (
-        <Button
-          variant={"outline"}
-          className="w-fit"
-          onClick={() => {
-            exitFullScreen();
-            setIsFullScreen(false);
-          }}
-        >
-          Exit FullScreen
-        </Button>
-      )}
-    </div>
-  );
-};
+const Page = () => (
+  <QuizStatusPage
+    tone="warning"
+    eyebrow="Time limit reached"
+    title="Time limit exceeded"
+    description="The available time for this quiz has ended. Your attempt may already have been submitted."
+    detail="If you were redirected here unexpectedly, contact the quiz administrator before attempting the quiz again."
+  />
+);
 
 export default Page;

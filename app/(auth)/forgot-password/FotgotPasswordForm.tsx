@@ -4,92 +4,138 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { findUserByEmailDB, saveResetTokenDB } from "@/lib/actions/user.action";
-import { generateResetPasswordToken, success } from "@/lib/utils";
+import { generateResetPasswordToken, success, error } from "@/lib/utils";
 import React from "react";
-import { CgSpinner } from "react-icons/cg";
-import { error } from "@/lib/utils";
 import { forgotPasswordTemplate } from "@/email_templates/forgot_password";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, ArrowRight, Mail, MailCheck } from "lucide-react";
 
 const FotgotPasswordForm = () => {
-  const router = useRouter();
-  const [email, setEmail] = React.useState<string>("");
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [email, setEmail] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [sent, setSent] = React.useState(false);
 
-  const onSubmit = async (event: React.SyntheticEvent) => {
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!email.trim()) return;
     setIsLoading(true);
-
     try {
-      const user = await findUserByEmailDB({ email });
+      const user = await findUserByEmailDB({ email: email.trim() });
       if (!user.ok) {
-        return error(user.error!);
+        error(user.error || "Unable to process this request.");
+        return;
       }
 
       const { token, hashToken } = generateResetPasswordToken();
+      const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email.trim())}`;
+      const template = forgotPasswordTemplate(resetUrl, process.env.SENDER_NAME || "Quizvera");
 
-      const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}&email=${email}`;
-      const template = forgotPasswordTemplate(resetUrl, process.env.SENDER_NAME || "Quiz App");
-
-      const res = await fetch("/api/email", {
+      const response = await fetch("/api/email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          to: [{ name: "User", address: email }],
+          to: [{ name: "User", address: email.trim() }],
           subject: "Password Reset",
           body: { html: template },
         }),
-      }).then((res) => res.json());
-
-      if (!res.ok || !res?.data?.accepted.includes(email)) {
-        return error("Failed to send reset email. Please try again later.");
+      });
+      const res = await response.json();
+      if (!response.ok || !res?.data?.accepted?.includes(email.trim())) {
+        error("Failed to send reset email. Please try again later.");
+        return;
       }
 
-      const { ok, error: dbError } = await saveResetTokenDB({ email, token: hashToken });
-      if (!ok) {
-        return error(dbError!);
+      const saved = await saveResetTokenDB({ email: email.trim(), token: hashToken });
+      if (!saved.ok) {
+        error(saved.error || "Unable to save reset request.");
+        return;
       }
 
-      setEmail("");
-      success("Email sent successfully! Please check your inbox.");
-      router.push("/sign-in");
-    } catch (error: any) {
-      console.log(error.message);
-      error("Something went wrong");
+      setSent(true);
+      success("Reset email sent. Check your inbox.");
+    } catch {
+      error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (sent) {
+    return (
+      <div className="py-2 text-center">
+        <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+          <MailCheck className="h-7 w-7" />
+        </div>
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">Check your inbox</p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-950">Reset link sent</h1>
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          We sent password-reset instructions to <span className="font-semibold text-slate-700">{email}</span>.
+        </p>
+        <Button asChild className="mt-6 h-11 w-full rounded-xl bg-indigo-600 hover:bg-indigo-700">
+          <Link href="/sign-in">
+            Back to sign in <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <>
-      <div className="flex flex-col space-y-2 text-center py-5">
-        <h1 className="text-2xl font-semibold tracking-tight">Forgot Password</h1>
-        <p className="text-sm text-muted-foreground">Enter your email to reset your password</p>
+      <div className="mb-7">
+        <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100">
+          <Mail className="h-6 w-6" />
+        </div>
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-indigo-600">Account recovery</p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-[28px]">Forgot your password?</h1>
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          Enter the email address linked to your account and we&apos;ll send you a reset link.
+        </p>
       </div>
-      <form onSubmit={onSubmit}>
-        <div className="grid gap-2">
-          <div className="grid gap-1">
-            <Label className="font-normal" htmlFor="email">
-              Email
-            </Label>
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+            Email address
+          </Label>
+          <div className="relative">
+            <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               id="email"
+              name="email"
               placeholder="name@example.com"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              autoCapitalize="none"
               autoComplete="email"
+              autoCapitalize="none"
               autoCorrect="off"
               disabled={isLoading}
+              required
+              className="h-11 rounded-xl border-slate-200 pl-10 text-sm focus-visible:border-indigo-400 focus-visible:ring-indigo-500/20"
             />
           </div>
-          <Button disabled={email === "" || isLoading} className="mt-2">
-            {isLoading && <CgSpinner className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? "Sending..." : "Send Reset Link"}
-          </Button>
         </div>
+        <Button
+          type="submit"
+          disabled={!email.trim() || isLoading}
+          className="h-11 w-full rounded-xl bg-indigo-600 font-semibold text-white hover:bg-indigo-700"
+        >
+          {isLoading && <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}
+          {isLoading ? (
+            "Sending reset link..."
+          ) : (
+            <>
+              Send reset link <ArrowRight className="ml-2 h-4 w-4" />
+            </>
+          )}
+        </Button>
       </form>
+      <Link
+        href="/sign-in"
+        className="mx-auto mt-6 flex w-fit items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-indigo-600"
+      >
+        <ArrowLeft className="h-4 w-4" /> Back to sign in
+      </Link>
     </>
   );
 };

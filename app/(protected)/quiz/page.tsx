@@ -26,12 +26,19 @@ import { Label } from "@/components/ui/label";
 import {
   ArrowDown,
   ArrowUp,
+  BookOpen,
   CalendarDays,
   CheckCircle,
   ChevronDown,
+  Clock3,
   CopyIcon,
   Download,
+  FileQuestion,
+  ListChecks,
   Loader2,
+  ShieldCheck,
+  Sparkles,
+  Users,
   XCircle,
 } from "lucide-react";
 import { convertJsonToCsv, downloadFile } from "@/lib/download";
@@ -70,82 +77,327 @@ const Page = ({ searchParams }: { searchParams: { id: string } }) => {
   }
 
   return (
-    <Tabs defaultValue="details" className="w-full p-2">
-      <TabsList className="w-full">
-        <TabsTrigger value="details" className="w-full">
-          Details
-        </TabsTrigger>
-        <TabsTrigger value="participants" className="w-full">
-          Participants
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value="details">
-        <div className="w-full mx-auto max-w-6xl flex flex-col gap-5">
-          <div className="flex items-center justify-between bg-muted rounded-lg px-2 shadow-md">
-            <h1 className="md:text-xl font-semibold tracking-tight line-clamp-2">
-              {data.title}
-              {data.isStrictMode && <span className="text-red-600 ml-2 text-sm">(Strict Mode)</span>}
-            </h1>
-            <div className="flex gap-1">
-              <Button variant={"ghost"} size={"icon"} className="text-blue-600 hover:bg-blue-100 hover:text-blue-600">
-                <Link href={`/quiz/edit?id=${data.id}`}>
-                  <Pencil1Icon className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button variant={"ghost"} size={"icon"} className="text-red-600 hover:bg-red-100 hover:text-red-600">
+    <Tabs defaultValue="details" className="mx-auto w-full max-w-[1440px] space-y-6 p-3 sm:p-5 lg:p-7">
+      {/* Page header */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="bg-gradient-to-br from-white via-white to-indigo-50/70 p-5 sm:p-7">
+          <div className="flex flex-col justify-between gap-6 xl:flex-row xl:items-start">
+            <div className="min-w-0 flex-1">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <span className="rounded-md bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-indigo-700">
+                  Quiz management
+                </span>
+
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${
+                    data.published
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-amber-200 bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${data.published ? "bg-emerald-500" : "bg-amber-500"}`} />
+                  {data.published ? "Published" : "Draft"}
+                </span>
+
+                {data.isStrictMode && (
+                  <span className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700">
+                    Strict mode
+                  </span>
+                )}
+              </div>
+
+              <h1 className="max-w-3xl break-words text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+                {data.title}
+              </h1>
+
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                Manage quiz content, configure assessment settings, and review participant performance.
+              </p>
+
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600">
+                  <FileQuestion className="h-4 w-4 text-indigo-600" />
+                  {data.questions.length} questions
+                </span>
+
+                <span className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600">
+                  <Clock3 className="h-4 w-4 text-indigo-600" />
+                  {data.duration} min
+                </span>
+
+                <span className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600">
+                  <ListChecks className="h-4 w-4 text-indigo-600" />
+                  {data.maxMarks} total marks
+                </span>
+              </div>
+            </div>
+
+            {/* Page actions */}
+            <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+              <Link
+                href={`/quiz/edit?id=${data.id}`}
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+              >
+                <Pencil1Icon className="h-4 w-4" />
+                Edit quiz
+              </Link>
+
+              <div className="flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 shadow-sm">
                 <DeleteQuiz quizId={data.id} images={data.images || []} groupId={data.groupId} />
-              </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Management tabs */}
+        <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-3 sm:px-6">
+          <TabsList className="grid h-auto w-full max-w-md grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-white p-1">
+            <TabsTrigger
+              value="details"
+              className="gap-2 rounded-lg py-2.5 text-sm font-medium text-slate-600 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm"
+            >
+              <BookOpen className="h-4 w-4" />
+              Quiz details
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="participants"
+              className="gap-2 rounded-lg py-2.5 text-sm font-medium text-slate-600 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm"
+            >
+              <Users className="h-4 w-4" />
+              Participants
+            </TabsTrigger>
+          </TabsList>
+        </div>
+      </div>
+
+      {/* Quiz details */}
+      <TabsContent value="details" className="mt-0 space-y-6">
+        {/* Publication actions */}
+        <section className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:px-5">
+          <div className="flex items-start gap-3">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-indigo-50">
+              {data.published ? (
+                <ShieldCheck className="h-5 w-5 text-indigo-600" />
+              ) : (
+                <Sparkles className="h-5 w-5 text-indigo-600" />
+              )}
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                {data.published ? "Your quiz is live" : "Your quiz is not published"}
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                {data.published
+                  ? "Manage distribution or copy the quiz link to share it."
+                  : "Publish the quiz when its content and settings are ready."}
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <PublishQuiz id={data.id} isPublished={data.published} setData={setData} />
+
             <Button
-              type="submit"
+              type="button"
+              variant="outline"
               size="sm"
-              className="px-3"
-              onClick={() => {
-                navigator.clipboard.writeText(app_url + "/share/quiz/" + data.id);
-                success("Link copied to clipboard");
+              className="gap-2"
+              onClick={async () => {
+                try {
+                  const shareUrl = `${app_url || window.location.origin}/share/quiz/${data.id}`;
+
+                  await navigator.clipboard.writeText(shareUrl);
+                  success("Link copied to clipboard");
+                } catch {
+                  error("Unable to copy link");
+                }
               }}
             >
-              <span className="sr-only">Copy</span>
               <CopyIcon className="h-4 w-4" />
+              Copy link
             </Button>
           </div>
+        </section>
 
-          <QuizHeader title={data.title} images={data.images || []} editable />
-          <UserInputs inputs={data.userInputs} editable />
-          <QuizInfo duration={data.duration} maxMarks={data.maxMarks} editable />
-          <QuizDesc desc={data.desc} editable />
+        {/* Main layout */}
+        <div className="grid min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          {/* Main column */}
+          <main className="min-w-0 space-y-6">
+            {/* Quiz cover */}
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
+                <h2 className="text-sm font-semibold text-slate-900">Quiz cover</h2>
+                <p className="mt-1 text-xs text-slate-500">Manage the quiz header and associated images.</p>
+              </div>
 
-          <div className="flex gap-2">
-            <GenerateQuestions quizId={data.id} isTranslationEnabled={data.translationEnabled} />
+              <div className="p-4 sm:p-6">
+                <QuizHeader title={data.title} images={data.images || []} editable />
+              </div>
+            </section>
 
-            <AddQuestion
-              quizId={data.id}
-              data={data}
-              setData={setData}
-              translate={{ enable: data.translationEnabled, source: data.sourceLanguage, target: data.targetLanguage }}
-            />
-          </div>
+            {/* Quiz description */}
+            <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
+                <h2 className="text-sm font-semibold text-slate-900">Description</h2>
+                <p className="mt-1 text-xs text-slate-500">Explain the assessment to participants.</p>
+              </div>
 
-          <QuizQuestions questions={data.questions} data={data} setData={setData} />
+              <div className="p-4 sm:p-6">
+                <QuizDesc desc={data.desc} editable />
+              </div>
+            </section>
 
-          <QuizFooter
-            data={{
-              footerHeading1: data.footerHeading1,
-              footerHeading2: data.footerHeading2,
-              footerText1: data.footerText1,
-              footerText2: data.footerText2,
-              footerLink: data.footerLink,
-            }}
-            editable
-          />
+            {/* Question bank */}
+            <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex flex-col justify-between gap-4 border-b border-slate-200 bg-gradient-to-br from-white to-slate-50/80 p-5 sm:p-6 lg:flex-row lg:items-center">
+                <div className="flex items-start gap-3">
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-indigo-50 ring-1 ring-indigo-100">
+                    <ListChecks className="h-5 w-5 text-indigo-600" />
+                  </div>
+
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-lg font-bold tracking-tight text-slate-900">Question bank</h2>
+
+                      <span className="rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+                        {data.questions.length} {data.questions.length === 1 ? "question" : "questions"}
+                      </span>
+                    </div>
+
+                    <p className="mt-1.5 max-w-lg text-xs leading-5 text-slate-500">
+                      Create questions, generate them with AI, and maintain the content of your assessment.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <GenerateQuestions quizId={data.id} isTranslationEnabled={data.translationEnabled} />
+
+                  <AddQuestion
+                    quizId={data.id}
+                    data={data}
+                    setData={setData}
+                    translate={{
+                      enable: data.translationEnabled,
+                      source: data.sourceLanguage,
+                      target: data.targetLanguage,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="min-w-0 p-3 sm:p-5">
+                {data.questions.length > 0 ? (
+                  <QuizQuestions questions={data.questions} data={data} setData={setData} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-5 py-12 text-center">
+                    <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+                      <FileQuestion className="h-6 w-6 text-indigo-600" />
+                    </div>
+
+                    <h3 className="mt-4 text-base font-semibold text-slate-900">No questions added yet</h3>
+
+                    <p className="mt-1.5 max-w-sm text-sm leading-6 text-slate-500">
+                      Start building your quiz by adding a question or generating questions automatically.
+                    </p>
+
+                    <div className="mt-5 flex flex-wrap justify-center gap-2">
+                      <GenerateQuestions quizId={data.id} isTranslationEnabled={data.translationEnabled} />
+
+                      <AddQuestion
+                        quizId={data.id}
+                        data={data}
+                        setData={setData}
+                        translate={{
+                          enable: data.translationEnabled,
+                          source: data.sourceLanguage,
+                          target: data.targetLanguage,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Quiz footer */}
+            <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
+                <h2 className="text-sm font-semibold text-slate-900">Footer content</h2>
+                <p className="mt-1 text-xs text-slate-500">Configure the additional content shown in your quiz footer.</p>
+              </div>
+
+              <div className="p-4 sm:p-6">
+                <QuizFooter
+                  data={{
+                    footerHeading1: data.footerHeading1,
+                    footerHeading2: data.footerHeading2,
+                    footerText1: data.footerText1,
+                    footerText2: data.footerText2,
+                    footerLink: data.footerLink,
+                  }}
+                  editable
+                />
+              </div>
+            </section>
+          </main>
+
+          {/* Settings sidebar */}
+          <aside className="min-w-0 space-y-6 xl:sticky xl:top-[70px]">
+            <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-100 px-5 py-4">
+                <div className="flex items-center gap-2">
+                  <Clock3 className="h-4 w-4 text-indigo-600" />
+                  <h2 className="text-sm font-semibold text-slate-900">Assessment settings</h2>
+                </div>
+
+                <p className="mt-1 text-xs text-slate-500">Duration and scoring.</p>
+              </div>
+
+              <div className="p-4 sm:p-5">
+                <QuizInfo duration={data.duration} maxMarks={data.maxMarks} editable />
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-100 px-5 py-4">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-indigo-600" />
+                  <h2 className="text-sm font-semibold text-slate-900">Participant fields</h2>
+                </div>
+
+                <p className="mt-1 text-xs text-slate-500">Information collected from quiz participants.</p>
+              </div>
+
+              <div className="p-4 sm:p-5">
+                <UserInputs inputs={data.userInputs} editable />
+              </div>
+            </section>
+          </aside>
         </div>
       </TabsContent>
-      <TabsContent value="participants">
-        <QuizHistory quizId={searchParams.id} questions={data.questions} />
+
+      {/* Participant history */}
+      <TabsContent value="participants" className="mt-0">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+          <div className="mb-5 flex items-start gap-3">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-indigo-50">
+              <Users className="h-5 w-5 text-indigo-600" />
+            </div>
+
+            <div>
+              <h2 className="text-lg font-bold tracking-tight text-slate-900">Participants</h2>
+              <p className="mt-1 text-sm leading-5 text-slate-500">
+                Review submissions, inspect quiz results, and manage participant records.
+              </p>
+            </div>
+          </div>
+
+          <QuizHistory quizId={searchParams.id} questions={data.questions} />
+        </section>
       </TabsContent>
     </Tabs>
   );
@@ -408,6 +660,12 @@ const Participant = ({
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   const [results, setResults] = useState<IResult[]>([]);
+
+  const totalQuestions = questions.length;
+  const attemptedCount = data.Answers.length;
+  const unansweredCount = Math.max(0, totalQuestions - attemptedCount);
+  const scorePercentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+
   // count correct and incorrect answers
   useEffect(() => {
     if (!data.Answers) return;
@@ -564,32 +822,104 @@ const Participant = ({
       <AccordionContent>
         {data.anyReason && <p className="text-red-600 px-4 pb-2">Reason: {data.anyReason}</p>}
         {/* @ts-ignore */}
-        <div ref={userInfoRef}>
-          <div className="grid grid-cols-2 gap-1 px-4">
-            {/* <p className="text-sm">
-              <span className="font-medium">Phone:</span> {data.User.phone}
-            </p>
-            <p className="text-sm">
-              <span className="font-medium">Email:</span> {data.User.email}
-            </p> */}
 
-            <p className="text-sm">
-              <span className="font-medium">Question Answered:</span> {data.Answers.length}
-            </p>
-            <p className="text-sm">
-              <span className="font-medium">Not Answered:</span> {questions.length - data.Answers.length}
-            </p>
-            <p className="text-sm">
-              <span className="font-medium">Correct Answers:</span> {correctAnswers}
-            </p>
-            <p className="text-sm">
-              <span className="font-medium">Incorrect Answers:</span> {incorrectAnswers}
-            </p>
+        <div ref={userInfoRef} className="mx-auto mb-8 max-w-[1020px]">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            {/* Score header */}
+            <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 px-5 py-7 text-white sm:px-8">
+              <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-300">Assessment report</p>
 
-            <p className="text-sm">
-              <span className="font-medium">Submitted on:</span> {data.createdAt.toLocaleString()}
-            </p>
-          </div>
+                  <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{data.User.name}</h2>
+
+                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-300">
+                    Review your performance, identify mistakes, and find the concepts that need more practice.
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-200">
+                      {totalQuestions} Questions
+                    </span>
+
+                    <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-200">
+                      {attemptedCount} Attempted
+                    </span>
+                  </div>
+                </div>
+
+                {/* Circular score */}
+                <div className="flex flex-col gap-4">
+                  <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Quiz Results</h2>
+                  <div className="flex shrink-0 items-center gap-4 self-start sm:self-auto">
+                    <div
+                      className="grid h-28 w-28 place-items-center rounded-full"
+                      style={{
+                        background: `conic-gradient(#34d399 ${scorePercentage}%, rgba(255,255,255,0.15) 0)`,
+                      }}
+                    >
+                      <div className="grid h-[92px] w-[92px] place-items-center rounded-full bg-slate-900">
+                        <div className="text-center">
+                          <p className="text-3xl font-bold tracking-tight">{scorePercentage}%</p>
+                          <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Score</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium text-slate-200">Final score</p>
+                      <p className="mt-1 text-xl font-semibold">
+                        {correctAnswers}
+                        <span className="text-slate-400"> / {totalQuestions}</span>
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">Correct answers</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Statistics */}
+            <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4 sm:p-6">
+              <div className="rounded-xl border border-slate-200 bg-white p-4">
+                <p className="text-xs font-medium text-slate-500">Questions answered</p>
+                <p className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{attemptedCount}</p>
+                <p className="mt-1 text-xs text-slate-500">Out of {totalQuestions} questions</p>
+              </div>
+
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+                <p className="text-xs font-medium text-emerald-700">Correct answers</p>
+                <p className="mt-2 text-2xl font-bold tracking-tight text-emerald-700">{correctAnswers}</p>
+                <p className="mt-1 text-xs text-emerald-700/80">
+                  {attemptedCount > 0
+                    ? `${Math.round((correctAnswers / attemptedCount) * 100)}% of attempted`
+                    : "No attempts yet"}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-4">
+                <p className="text-xs font-medium text-rose-700">Incorrect answers</p>
+                <p className="mt-2 text-2xl font-bold tracking-tight text-rose-700">{incorrectAnswers}</p>
+                <p className="mt-1 text-xs text-rose-700/80">Review these questions</p>
+              </div>
+
+              <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+                <p className="text-xs font-medium text-amber-700">Not answered</p>
+                <p className="mt-2 text-2xl font-bold tracking-tight text-amber-700">{unansweredCount}</p>
+                <p className="mt-1 text-xs text-amber-700/80">Questions skipped</p>
+              </div>
+            </div>
+
+            {/* Submission details */}
+            <div className="flex flex-col gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-4 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="flex items-center gap-2 text-slate-600">
+                <span className="font-medium text-slate-800">Submitted on</span>
+                <span>{new Date(data.createdAt).toLocaleString()}</span>
+              </div>
+
+              <span className="text-xs text-slate-500">Assessment performance overview</span>
+            </div>
+          </section>
         </div>
 
         <div className="mt-2">
@@ -626,45 +956,276 @@ const Participant = ({
           <div className={`${showResult ? "block" : "hidden"} overflow-y-scroll mt-3`}>
             {/* @ts-ignore */}
             <div ref={contentRef} className="mx-auto max-w-[1020px]">
-              {results.map((res, index) => (
-                <div
-                  key={res.id}
-                  className={`flex flex-col m-1 p-2 rounded-md ${
-                    res.isCorrect && res.isAttempted ? "bg-green-50" : res.isAttempted ? "bg-red-50" : "bg-gray-50"
-                  }`}
-                >
-                  <div className="flex gap-2 text-base font-medium">
-                    <span>{index + 1}.</span>
-                    <div className="min-w-0 w-full">
-                      <textarea
-                        id={res.id}
-                        readOnly
-                        rows={1}
-                        className="w-full font-medium resize-none overflow-hidden outline-none bg-inherit [field-sizing:content]"
-                        value={res.title}
-                      />
-                      {res.snippet && <CodeBlock lang={res.snippetLang || "plaintext"}>{res.snippet}</CodeBlock>}
-                    </div>
+              {/* Section Header */}
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className="h-1 w-8 rounded-full bg-indigo-600" />
+                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">
+                      Assessment Review
+                    </span>
                   </div>
-                  <div className="grid grid-cols-1 xs:grid-cols-2 gap-1">
-                    {res.options
-                      .sort((a, b) => a.key.localeCompare(b.key))
-                      .map((option, index) => (
-                        <div key={option.id} className="flex items-start gap-2 text-sm">
-                          <div>({option.key})</div>
-                          {res.correctAnswer === option.key && <CheckCircle className="h-4 w-4 text-green-600 mt-[3px]" />}
-                          {res.userAnswer !== res.correctAnswer && res.userAnswer === option.key && (
-                            <XCircle className="h-4 w-4 text-red-500  mt-[3px]" />
-                          )}
-                          <div className="mt-[2px]">
-                            <p className="leading-4">{option.value}</p>
-                            {/* <p className="text-xs leading-[18px] mt-1">{option.translatedValue}</p> */}
-                          </div>
-                        </div>
-                      ))}
+
+                  <h2 className="text-2xl font-bold tracking-tight text-slate-900">Question Review</h2>
+
+                  <p className="mt-1.5 text-sm leading-5 text-slate-500">
+                    Review your answers and identify areas that need improvement.
+                  </p>
+                </div>
+
+                <div className="flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5   shadow-sm">
+                  <div className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-50">
+                    <span className="text-sm font-bold text-indigo-600">Q</span>
+                  </div>
+
+                  <div>
+                    <p className="text-lg font-bold leading-5 text-slate-900">{results.length}</p>
+                    <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-slate-500">Total questions</p>
                   </div>
                 </div>
-              ))}
+              </div>
+
+              {/* Status Legend */}
+              <div className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                <span className="text-xs font-semibold text-slate-600">Answer status</span>
+
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle className="h-4 w-4 text-emerald-600" />
+                  <span className="text-xs text-slate-600">Correct answer</span>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <XCircle className="h-4 w-4 text-rose-500" />
+                  <span className="text-xs text-slate-600">Incorrect selection</span>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-full border-2 border-slate-300" />
+                  <span className="text-xs text-slate-600">Other options</span>
+                </div>
+              </div>
+
+              {/* Question List */}
+              <div className="space-y-4">
+                {results.map((res, index) => {
+                  const isCorrect = Boolean(res.isAttempted && res.isCorrect);
+                  const isIncorrect = Boolean(res.isAttempted && !res.isCorrect);
+                  const isUnattempted = !res.isAttempted;
+
+                  const status = isCorrect
+                    ? {
+                        label: "Correct",
+                        className: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+                        iconClassName: "text-emerald-600",
+                        numberClassName: "bg-emerald-100 text-emerald-700",
+                        borderClassName: "border-emerald-200",
+                      }
+                    : isIncorrect
+                      ? {
+                          label: "Incorrect",
+                          className: "bg-rose-50 text-rose-700 ring-rose-600/20",
+                          iconClassName: "text-rose-600",
+                          numberClassName: "bg-rose-100 text-rose-700",
+                          borderClassName: "border-rose-200",
+                        }
+                      : {
+                          label: "Not attempted",
+                          className: "bg-slate-100 text-slate-600 ring-slate-500/20",
+                          iconClassName: "text-slate-500",
+                          numberClassName: "bg-slate-100 text-slate-600",
+                          borderClassName: "border-slate-200",
+                        };
+
+                  const sortedOptions = [...res.options].sort((a, b) => a.key.localeCompare(b.key));
+
+                  return (
+                    <article
+                      key={res.id}
+                      className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition-shadow duration-200 hover:shadow-md ${status.borderClassName}`}
+                    >
+                      {/* Question Header and Text */}
+                      <div className="p-4 sm:p-6">
+                        <div className="flex items-start gap-3 sm:gap-4">
+                          {/* Question Number */}
+                          <div
+                            className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-sm font-bold ${status.numberClassName}`}
+                          >
+                            {String(index + 1).padStart(2, "0")}
+                          </div>
+
+                          {/* Question Content */}
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+                                Question {index + 1}
+                              </span>
+
+                              <span
+                                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${status.className}`}
+                              >
+                                {isCorrect && <CheckCircle className="h-3.5 w-3.5" />}
+
+                                {isIncorrect && <XCircle className="h-3.5 w-3.5" />}
+
+                                {isUnattempted && <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />}
+
+                                {status.label}
+                              </span>
+                            </div>
+
+                            <p className="whitespace-pre-wrap break-words text-sm font-semibold leading-7 text-slate-900 sm:text-base">
+                              {res.title}
+                            </p>
+
+                            {/* Code Snippet */}
+                            {res.snippet && (
+                              <div className="mt-4 overflow-hidden rounded-xl border border-slate-800 bg-slate-950">
+                                <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.04] px-4 py-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="h-2 w-2 rounded-full bg-rose-400" />
+                                    <span className="h-2 w-2 rounded-full bg-amber-400" />
+                                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                                  </div>
+
+                                  <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                                    {res.snippetLang || "plaintext"}
+                                  </span>
+                                </div>
+
+                                <div className="overflow-x-auto">
+                                  <CodeBlock lang={res.snippetLang || "plaintext"}>{res.snippet}</CodeBlock>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Options Section */}
+                      <div className="border-t border-slate-100 bg-slate-50/70 px-4 py-4 sm:px-6 sm:py-5">
+                        <div className="mb-3 flex items-center justify-between gap-2">
+                          <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-600">Answer options</h3>
+
+                          <span className="text-[11px] font-medium text-slate-400">{sortedOptions.length} options</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                          {sortedOptions.map((option) => {
+                            const isSelected = res.userAnswer === option.key;
+                            const isCorrectOption = res.correctAnswer === option.key;
+
+                            const isWrongSelection = isSelected && !isCorrectOption;
+
+                            const optionStyle = isCorrectOption
+                              ? "border-emerald-200 bg-emerald-50/90"
+                              : isWrongSelection
+                                ? "border-rose-200 bg-rose-50/90"
+                                : "border-slate-200 bg-white hover:border-slate-300";
+
+                            const optionKeyStyle = isCorrectOption
+                              ? "bg-emerald-600 text-white"
+                              : isWrongSelection
+                                ? "bg-rose-500 text-white"
+                                : "bg-slate-100 text-slate-600";
+
+                            return (
+                              <div
+                                key={option.id}
+                                className={`flex min-w-0 items-start gap-3 rounded-xl border p-3.5 transition-colors duration-150 ${optionStyle}`}
+                              >
+                                {/* Option Key */}
+                                <div
+                                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs font-bold ${optionKeyStyle}`}
+                                >
+                                  {option.key.toUpperCase()}
+                                </div>
+
+                                {/* Option Text and Explanation of Status */}
+                                <div className="min-w-0 flex-1 pt-0.5">
+                                  <p
+                                    className={`break-words text-sm leading-6 ${
+                                      isCorrectOption
+                                        ? "font-medium text-emerald-950"
+                                        : isWrongSelection
+                                          ? "font-medium text-rose-950"
+                                          : "text-slate-700"
+                                    }`}
+                                  >
+                                    {option.value}
+                                  </p>
+
+                                  {(isCorrectOption || isSelected) && (
+                                    <p
+                                      className={`mt-2 text-[11px] font-semibold leading-4 ${
+                                        isCorrectOption ? "text-emerald-700" : "text-rose-700"
+                                      }`}
+                                    >
+                                      {isCorrectOption && isSelected
+                                        ? "Your answer · Correct answer"
+                                        : isCorrectOption
+                                          ? "Correct answer"
+                                          : "Your selected answer"}
+                                    </p>
+                                  )}
+                                </div>
+
+                                {/* Option Status Icon */}
+                                <div className="shrink-0 pt-1">
+                                  {isCorrectOption && (
+                                    <CheckCircle className="h-4 w-4 text-emerald-600" aria-label="Correct answer" />
+                                  )}
+
+                                  {isWrongSelection && (
+                                    <XCircle className="h-4 w-4 text-rose-500" aria-label="Incorrect selection" />
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Unattempted Question Notice */}
+                        {isUnattempted && (
+                          <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200/80 bg-amber-50 px-3 py-2.5">
+                            <span className="mt-0.5 text-amber-600">!</span>
+
+                            <p className="text-xs leading-5 text-amber-800">
+                              This question was not attempted. The correct answer is highlighted above for your review.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Incorrect Answer Notice */}
+                        {/* {isIncorrect && (
+                          <div className="mt-3 flex items-start gap-2 rounded-lg border border-rose-100 bg-rose-50/70 px-3 py-2.5">
+                            <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
+
+                            <p className="text-xs leading-5 text-rose-800">
+                              Your selected answer is incorrect. Review the highlighted correct answer.
+                            </p>
+                          </div>
+                        )} */}
+
+                        {/* Correct Answer Notice */}
+                        {/* {isCorrect && (
+                          <div className="mt-3 flex items-start gap-2 rounded-lg border border-emerald-100 bg-emerald-50/70 px-3 py-2.5">
+                            <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+
+                            <p className="text-xs leading-5 text-emerald-800">Correct. You selected the right answer.</p>
+                          </div>
+                        )} */}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              {/* End of Review */}
+              <div className="mt-6 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-5 text-center">
+                <CheckCircle className="h-4 w-4 text-indigo-600" />
+
+                <p className="text-sm font-medium text-slate-600">You have reached the end of the assessment review.</p>
+              </div>
             </div>
           </div>
         </div>

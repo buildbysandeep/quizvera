@@ -1,53 +1,59 @@
-import Link from "next/link";
 import React from "react";
+import { ExternalLink } from "lucide-react";
 
-const QuizFooter = ({
-  data,
-  editable,
-}: {
-  data: {
-    footerHeading1: string;
-    footerHeading2: string;
-    footerText1: string;
-    footerText2: string;
-    footerLink: string;
-  };
-  editable?: boolean;
-}) => {
+type FooterData = {
+  footerHeading1?: string | null;
+  footerHeading2?: string | null;
+  footerText1?: string | null;
+  footerText2?: string | null;
+  footerLink?: string | null;
+};
+
+function normalizeLink(value: string) {
+  const trimmed = value.trim();
+  if (/^(https?:\/\/|mailto:|tel:|\/|#)/i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+const QuizFooter = ({ data, editable }: { data: FooterData; editable?: boolean }) => {
+  const hasContent = Boolean(
+    data.footerHeading1 || data.footerHeading2 || data.footerText1 || data.footerText2 || data.footerLink,
+  );
+  if (!hasContent && !editable) return null;
+
   return (
-    <div className="flex flex-col items-center gap-2 mt-20">
-      {data.footerHeading1 ? (
-        <h1 className="text-2xl md:text-3xl font-semibold">{data.footerHeading1}</h1>
-      ) : (
-        editable && (
-          <div className="h-fit rounded-md bg-gray-100 text-gray-400 text-2xl md:text-3xl font-semibold px-2">Heading 1</div>
-        )
-      )}
-      {data.footerHeading2 ? (
-        <h1 className="text-xl md:text-2xl font-medium">{data.footerHeading2}</h1>
-      ) : (
-        editable && (
-          <div className="h-fit rounded-md bg-gray-100 text-gray-400 text-xl md:text-2xl font-medium px-2">Heading 2</div>
-        )
-      )}
-      {data.footerText1 ? (
-        <p className="text-sm font-medium">{data.footerText1}</p>
-      ) : (
-        editable && <div className="h-fit rounded-md bg-gray-100 text-gray-400 text-sm font-medium px-2">Text 1</div>
-      )}
-      {data.footerText2 ? (
-        <p className="text-sm font-medium">{data.footerText2}</p>
-      ) : (
-        editable && <div className="h-fit rounded-md bg-gray-100 text-gray-400 text-sm font-medium px-2">Text 2</div>
-      )}
-      {data.footerLink ? (
-        <Link href={data.footerLink} className="text-sm">
-          {data.footerLink}
-        </Link>
-      ) : (
-        editable && <div className="h-fit rounded-md bg-gray-100 text-gray-400 text-sm px-2">Link</div>
-      )}
-    </div>
+    <footer className="mt-8 border-t border-slate-200 pt-6 text-center sm:mt-10 sm:pt-8">
+      <div className="mx-auto max-w-2xl space-y-2">
+        {(data.footerHeading1 || editable) && (
+          <h2 className="break-words text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+            {data.footerHeading1 || (editable ? "Heading 1" : "")}
+          </h2>
+        )}
+        {(data.footerHeading2 || editable) && (
+          <p className="break-words text-sm font-semibold text-slate-700">
+            {data.footerHeading2 || (editable ? "Heading 2" : "")}
+          </p>
+        )}
+        {(data.footerText1 || editable) && (
+          <p className="break-words text-sm text-slate-500">{data.footerText1 || (editable ? "Text 1" : "")}</p>
+        )}
+        {(data.footerText2 || editable) && (
+          <p className="break-words text-sm text-slate-500">{data.footerText2 || (editable ? "Text 2" : "")}</p>
+        )}
+        {data.footerLink && (
+          <a
+            href={normalizeLink(data.footerLink)}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex max-w-full items-center gap-1.5 break-all text-sm font-medium text-indigo-600 underline-offset-4 hover:underline"
+          >
+            {data.footerLink}
+            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+          </a>
+        )}
+        {!data.footerLink && editable && <p className="text-sm text-slate-400">Link</p>}
+      </div>
+    </footer>
   );
 };
 

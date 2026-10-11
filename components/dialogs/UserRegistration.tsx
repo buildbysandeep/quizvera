@@ -1,6 +1,8 @@
 "use client";
 
-import { ReloadIcon } from "@radix-ui/react-icons";
+import React from "react";
+import { useRouter } from "next/navigation";
+import { ArrowRight, Loader2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,11 +15,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import React from "react";
 import { enterFullScreen, error } from "@/lib/utils";
 import { IUser } from "@/types";
 import { userRegDB } from "@/lib/actions/user.action";
-import { useRouter } from "next/navigation";
 
 export function UserRegistration({
   visible,
@@ -34,99 +34,152 @@ export function UserRegistration({
   const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
+  const [formError, setFormError] = React.useState("");
 
-  const submitHandler = async () => {
-    setIsLoading(true);
-    const res = await userRegDB({ name, email, phone, quizId });
-    setIsLoading(false);
-    if (!res.ok) {
-      error(res.error!);
+  const submitHandler = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isLoading) return;
+    const cleanName = name.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone.replace(/\D/g, "");
+    if (!cleanName || !cleanEmail || !/^\S+@\S+\.\S+$/.test(cleanEmail) || cleanPhone.length !== 10) {
+      setFormError("Enter a valid name, email address, and 10-digit phone number.");
       return;
     }
-    if (res.isSubmitted) {
-      router.replace(`/share/quiz/sb?quizId=${quizId}`);
+
+    setIsLoading(true);
+    setFormError("");
+    try {
+      const result = await userRegDB({ name: cleanName, email: cleanEmail, phone: cleanPhone, quizId });
+      if (!result.ok) {
+        setFormError(result.error || "Registration failed.");
+        return;
+      }
+      if (result.isSubmitted) {
+        router.replace(`/share/quiz/sb?quizId=${quizId}`);
+        return;
+      }
+      if (result.isDisqualified) {
+        router.replace(`/share/quiz/disqualified?quizId=${quizId}`);
+        return;
+      }
+      if (result.data) {
+        setUser({
+          id: result.data.id,
+          name: result.data.name || cleanName,
+          email: result.data.email,
+          phone: result.data.phone || cleanPhone,
+        });
+        try {
+          await enterFullScreen();
+        } catch {
+          /* fullscreen may be blocked by the browser */
+        }
+        setOpen(false);
+      }
+    } catch {
+      setFormError("A network error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
-    if (res.isDisqualified) {
-      router.replace(`/share/quiz/disqualified?quizId=${quizId}`);
-    }
-    if (res.data) {
-      enterFullScreen();
-      setUser({ id: res.data.id, name: res.data.name!, email: res.data.email, phone: res.data.phone! });
-    }
-    setOpen(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(nextOpen) => !isLoading && setOpen(nextOpen)}>
       <DialogTrigger asChild>
-        <Button className="" disabled={!visible}>
-          Start Quiz
+        <Button
+          type="button"
+          disabled={!visible}
+          className="h-11 gap-2 rounded-xl bg-indigo-600 px-5 font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+        >
+          <ArrowRight className="h-4 w-4" /> Start quiz
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Registration</DialogTitle>
-          <DialogDescription></DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-2">
-          <div className="grid gap-1">
-            <Label className="font-normal" htmlFor="name">
-              Name
-            </Label>
+      <DialogContent className="rounded-2xl border-slate-200 p-0 sm:max-w-md">
+        <div className="border-b border-slate-100 bg-gradient-to-br from-white to-indigo-50/70 px-6 py-5">
+          <DialogHeader>
+            <div className="mb-2 grid h-11 w-11 place-items-center rounded-xl border border-indigo-100 bg-white text-indigo-600 shadow-sm">
+              <UserRound className="h-5 w-5" />
+            </div>
+            <DialogTitle className="text-lg font-bold text-slate-900">Participant registration</DialogTitle>
+            <DialogDescription>Enter your details before starting the assessment.</DialogDescription>
+          </DialogHeader>
+        </div>
+        <form onSubmit={submitHandler} className="space-y-4 px-6 py-5">
+          <div className="space-y-2">
+            <Label htmlFor="registration-name">Full name</Label>
             <Input
-              id="name"
-              placeholder=""
-              type="name"
+              id="registration-name"
               value={name}
-              onChange={(event) => setName(event.target.value)}
-              autoCapitalize="none"
+              onChange={(event) => {
+                setName(event.target.value);
+                setFormError("");
+              }}
               autoComplete="name"
-              autoCorrect="off"
+              placeholder="Enter your name"
               disabled={isLoading}
+              className="h-11 rounded-xl"
             />
           </div>
-          <div className="grid gap-1">
-            <Label className="font-normal" htmlFor="email">
-              Email
-            </Label>
+          <div className="space-y-2">
+            <Label htmlFor="registration-email">Email address</Label>
             <Input
-              id="email"
-              placeholder=""
+              id="registration-email"
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoCapitalize="none"
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setFormError("");
+              }}
               autoComplete="email"
-              autoCorrect="off"
+              placeholder="name@example.com"
               disabled={isLoading}
+              className="h-11 rounded-xl"
             />
           </div>
-          <div className="grid gap-1">
-            <Label className="font-normal" htmlFor="phone">
-              Phone
-            </Label>
-            <span className="flex items-center border rounded-md overflow-hidden focus-within:border-primary">
-              <span className="bg-muted/90 h-full flex items-center px-2">+91</span>
+          <div className="space-y-2">
+            <Label htmlFor="registration-phone">Phone number</Label>
+            <div className="flex overflow-hidden rounded-xl border border-input focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2">
+              <span className="flex items-center border-r bg-slate-50 px-3 text-sm font-medium text-slate-600">+91</span>
               <Input
-                id="phone"
-                type="phone"
+                id="registration-phone"
+                type="tel"
+                inputMode="numeric"
                 value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-                autoCapitalize="none"
-                autoComplete="phone"
-                autoCorrect="off"
+                onChange={(event) => {
+                  setPhone(event.target.value.replace(/\D/g, ""));
+                  setFormError("");
+                }}
+                autoComplete="tel-national"
+                placeholder="10-digit mobile number"
                 disabled={isLoading}
-                className="border-none outline-none focus-visible:ring-0 shadow-none"
+                className="h-11 rounded-none border-0 shadow-none focus-visible:ring-0"
               />
-            </span>
-            {phone.length > 10 && <span className="text-red-500 text-xs">Invalid phone number</span>}
+            </div>
+            <p className="text-xs text-slate-500">{phone.length}/10 digits</p>
           </div>
-        </div>
-        <DialogFooter>
-          <Button size={"sm"} onClick={submitHandler} disabled={isLoading || !name || !email || phone.length !== 10}>
-            {isLoading ? <ReloadIcon className="mr-2 h-4 w-4 animate-spin" /> : "Submit"}
-          </Button>
-        </DialogFooter>
+          {formError ||
+            (phone && phone.length !== 10 && (
+              <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                {formError || (phone && phone.length !== 10 && "Enter a valid 10-digit phone number")}
+              </p>
+            ))}
+          <DialogFooter>
+            <Button
+              type="submit"
+              disabled={isLoading || !name.trim() || !email.trim() || phone.length !== 10}
+              className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 sm:w-auto"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Registering…
+                </>
+              ) : (
+                "Continue to quiz"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

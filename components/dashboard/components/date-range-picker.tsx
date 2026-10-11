@@ -2,53 +2,75 @@
 
 import * as React from "react";
 import { CalendarIcon } from "@radix-ui/react-icons";
-import { addDays, format } from "date-fns";
+import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
-
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-export function CalendarDateRangePicker({ className }: React.HTMLAttributes<HTMLDivElement>) {
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: new Date(2023, 0, 20),
-    to: addDays(new Date(2023, 0, 20), 20),
-  });
+export type CalendarDateRangePickerProps = {
+  value: DateRange;
+  onChange: (range: DateRange | undefined) => void;
+  className?: string;
+};
+
+export function CalendarDateRangePicker({ value, onChange, className }: CalendarDateRangePickerProps) {
+  const [open, setOpen] = React.useState(false);
+
+  const dateLabel = value.from
+    ? value.to
+      ? `${format(value.from, "LLL dd, yyyy")} – ${format(value.to, "LLL dd, yyyy")}`
+      : format(value.from, "LLL dd, yyyy")
+    : "Choose date range";
 
   return (
     <div className={cn("grid gap-2", className)}>
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
-            id="date"
-            variant={"outline"}
-            className={cn("w-fit sm:w-[260px] justify-start text-left font-normal", !date && "text-muted-foreground")}
-            size={"sm"}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {date?.from ? (
-              date.to ? (
-                <>
-                  {format(date.from, "LLL dd, y")} - {format(date.to, "LLL dd, y")}
-                </>
-              ) : (
-                format(date.from, "LLL dd, y")
-              )
-            ) : (
-              <span>Pick a date</span>
+            id="dashboard-date-range"
+            type="button"
+            variant="outline"
+            size="sm"
+            aria-label="Choose dashboard date range"
+            className={cn(
+              "h-10 w-full justify-start gap-2 rounded-xl border-slate-200 bg-white px-3 text-left font-medium text-slate-700 shadow-sm sm:w-auto sm:min-w-[270px]",
+              !value.from && "text-slate-500",
             )}
+          >
+            <CalendarIcon className="h-4 w-4 shrink-0 text-indigo-600" />
+            <span className="truncate">{dateLabel}</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
+        <PopoverContent className="w-auto rounded-xl border-slate-200 p-0 shadow-lg" align="end">
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={date?.from}
-            selected={date}
-            onSelect={setDate}
+            defaultMonth={value.from}
+            selected={value}
+            onSelect={(range) => {
+              onChange(range);
+              if (range?.from && range?.to) setOpen(false);
+            }}
             numberOfMonths={2}
+            disabled={{ after: new Date() }}
           />
+          <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-3 py-2.5">
+            <p className="text-xs text-slate-500">Select a start and end date.</p>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-8 text-xs"
+              onClick={() => {
+                onChange(undefined);
+                setOpen(false);
+              }}
+            >
+              Reset period
+            </Button>
+          </div>
         </PopoverContent>
       </Popover>
     </div>

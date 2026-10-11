@@ -4,58 +4,59 @@ import Image from "next/image";
 import React from "react";
 
 const QuizHeader = ({ title, images, editable }: { title: string; images: IImage[]; editable?: boolean }) => {
+  const leftImage = images?.find((image) => image.key === "left");
+  const rightImage = images?.find((image) => image.key === "right");
+
+  const renderImageSlot = (image: IImage | undefined, label: string) => {
+    if (!image && !editable) return <div className="min-w-0" />;
+
+    return (
+      <AspectRatio
+        ratio={2.7 / 1}
+        className={`overflow-hidden rounded-xl border bg-slate-50 ${
+          image ? "border-slate-200" : "border-dashed border-slate-300"
+        }`}
+      >
+        {image ? (
+          <Image
+            src={image.url}
+            quality={85}
+            priority
+            alt={`${label} quiz image`}
+            width={0}
+            height={0}
+            sizes="(max-width: 640px) 30vw, 240px"
+            className="h-full w-full rounded-xl object-contain"
+          />
+        ) : (
+          <div className="grid h-full w-full place-items-center px-1 text-center text-[10px] font-medium text-slate-400 sm:text-xs">
+            {label}
+          </div>
+        )}
+      </AspectRatio>
+    );
+  };
+
   return (
-    <div className="border-t-8 border-gray-700">
-      <div className="flex gap-2 justify-between">
-        <div className="w-full max-w-[30%]">
-          {editable && (
-            <AspectRatio ratio={2.7 / 1} className="border border-dashed border-border bg-muted">
-              {images?.some((image) => image.key === "left") ? (
-                <Image
-                  src={images?.find((image) => image.key === "left")?.url!}
-                  quality={10}
-                  priority
-                  alt="Image"
-                  width={0}
-                  height={0}
-                  sizes="100vw"
-                  className="rounded-md object-contain w-full h-full"
-                />
-              ) : (
-                <div className="w-full h-full bg-muted rounded-md grid place-content-center text-gray-400 text-sm md:text-base">
-                  Left Image
-                </div>
-              )}
-            </AspectRatio>
-          )}
+    <header className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="h-1.5 bg-slate-900" />
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)_minmax(0,1fr)] items-center gap-2 px-3 py-3 sm:gap-5 sm:px-5 sm:py-5">
+        <div className="min-w-0">{renderImageSlot(leftImage, "Left image")}</div>
+
+        <div className="flex min-w-0 justify-center">
+          <div className="max-w-full rounded-xl border border-indigo-100 bg-indigo-50/70 px-2.5 py-2 text-center sm:px-4 sm:py-3">
+            <p className="mb-1 text-[9px] font-bold uppercase tracking-[0.16em] text-indigo-500 sm:text-[10px]">
+              Assessment
+            </p>
+            <h1 className="break-words text-sm font-bold leading-5 tracking-tight text-slate-900 sm:text-xl sm:leading-7 md:text-2xl">
+              {title || (editable ? "Quiz title" : "")}
+            </h1>
+          </div>
         </div>
-        <div className="bg-muted h-fit w-fit max-w-[55%] rounded-b-md px-2 py-1 title-shadow">
-          <h1 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-medium text-center line-clamp-2">{title}</h1>
-        </div>
-        <div className="w-full max-w-[30%]">
-          {editable && (
-            <AspectRatio ratio={2.7 / 1} className="border border-dashed border-border bg-muted">
-              {images?.some((image) => image.key === "right") ? (
-                <Image
-                  src={images?.find((image) => image.key === "right")?.url!}
-                  quality={10}
-                  priority
-                  alt="Image"
-                  width={0}
-                  height={0}
-                  sizes="100vw"
-                  className="rounded-md object-contain w-full h-full"
-                />
-              ) : (
-                <div className="w-full h-full bg-muted rounded-md grid place-content-center text-gray-400 text-sm  md:text-base">
-                  Right Image
-                </div>
-              )}
-            </AspectRatio>
-          )}
-        </div>
+
+        <div className="min-w-0">{renderImageSlot(rightImage, "Right image")}</div>
       </div>
-    </div>
+    </header>
   );
 };
 

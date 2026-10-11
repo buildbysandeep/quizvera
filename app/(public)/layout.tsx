@@ -1,20 +1,21 @@
 import type { Metadata } from "next";
 import Fonts from "../fonts/outfit";
+// @ts-ignore
 import "../globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
-export const metadata = {
-  title: "Quiz App",
-  description: "Quiz App",
+export const metadata: Metadata = {
+  title: "Quiz App | Assessment",
+  description: "Complete your assessment and submit your responses.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body
-        className={`${Fonts.Light} ${Fonts.ExtraLight} ${Fonts.Thin} ${Fonts.Medium} ${Fonts.Regular}  ${Fonts.SemiBold} ${Fonts.Bold} ${Fonts.ExtraBold} antialiased`}
+        className={`${Fonts.Light} ${Fonts.ExtraLight} ${Fonts.Thin} ${Fonts.Medium} ${Fonts.Regular} ${Fonts.SemiBold} ${Fonts.Bold} ${Fonts.ExtraBold} antialiased`}
       >
-        {children}
+        <div className="min-h-screen bg-slate-50 text-slate-900">{children}</div>
         <Toaster />
       </body>
     </html>

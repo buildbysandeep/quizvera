@@ -112,3 +112,15 @@ export const translateTextApi = async (text: string, source: string, target: str
   if (!data.translatedText) return text;
   return data.translatedText;
 };
+
+export const formatDate = (value: Date) => {
+  if (!value) return "Date unavailable";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
+
+  return date.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};

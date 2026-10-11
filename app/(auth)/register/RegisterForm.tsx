@@ -5,143 +5,187 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { error, success } from "@/lib/utils";
 import React from "react";
-import { CgEye, CgSpinner } from "react-icons/cg";
 import { FcGoogle } from "react-icons/fc";
-import { EyeNoneIcon } from "@radix-ui/react-icons";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, UserRound, UserPlus } from "lucide-react";
+
+const fieldClass =
+  "h-11 rounded-xl border-slate-200 bg-white pl-10 text-sm placeholder:text-slate-400 focus-visible:border-indigo-400 focus-visible:ring-indigo-500/20";
 
 const RegisterForm = () => {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const [name, setName] = React.useState<string>("");
-  const [email, setEmail] = React.useState<string>("");
-  const [password, setPassword] = React.useState<string>("");
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [googleLoading, setGoogleLoading] = React.useState(false);
+  const [name, setName] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
 
-  async function onSubmit(event: React.SyntheticEvent) {
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!name.trim() || !email.trim() || !password) return;
     setIsLoading(true);
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
+      });
+      const res = await response.json();
+      if (!response.ok || !res.ok) {
+        error(res.error || "Unable to create your account.");
+        return;
+      }
+      success(res.message || "Account created successfully");
+      window.location.href = "/sign-in";
+    } catch {
+      error("Unable to create your account. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    }).then((res) => res.json());
-    setIsLoading(false);
-
-    if (!res.ok) return error(res.error);
-
-    success(res.message);
-    router.push("/sign-in");
+  async function handleGoogleSignUp() {
+    setGoogleLoading(true);
+    try {
+      await signIn("google", { callbackUrl: "/" });
+    } catch {
+      setGoogleLoading(false);
+      error("Google sign-up could not be started.");
+    }
   }
 
   return (
     <>
-      <div className="flex flex-col space-y-2 text-center py-5">
-        <h1 className="text-2xl font-semibold tracking-tight">Create an account</h1>
-        <p className="text-sm text-muted-foreground">Enter your details below to register</p>
+      <div className="mb-7">
+        <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100">
+          <UserPlus className="h-6 w-6" />
+        </div>
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-indigo-600">Get started</p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-[28px]">Create your account</h1>
+        <p className="mt-2 text-sm leading-6 text-slate-500">Set up your workspace to start creating and sharing quizzes.</p>
       </div>
-      <form onSubmit={onSubmit}>
-        <div className="grid gap-2">
-          <div className="grid gap-1">
-            <Label className="font-normal" htmlFor="name">
-              Name
-            </Label>
+
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name" className="text-sm font-medium text-slate-700">
+            Full name
+          </Label>
+          <div className="relative">
+            <UserRound className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               id="name"
-              placeholder="name@example.com"
+              name="name"
+              placeholder="Your name"
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              autoCapitalize="none"
               autoComplete="name"
-              autoCorrect="off"
-              disabled={isLoading}
+              autoCapitalize="words"
+              disabled={isLoading || googleLoading}
+              required
+              className={fieldClass}
             />
           </div>
-          <div className="grid gap-1">
-            <Label className="font-normal" htmlFor="email">
-              Email
-            </Label>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+            Email address
+          </Label>
+          <div className="relative">
+            <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               id="email"
+              name="email"
               placeholder="name@example.com"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              autoCapitalize="none"
               autoComplete="email"
-              autoCorrect="off"
-              disabled={isLoading}
+              autoCapitalize="none"
+              disabled={isLoading || googleLoading}
+              required
+              className={fieldClass}
             />
           </div>
-          <Label className="font-normal" htmlFor="password">
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-sm font-medium text-slate-700">
             Password
           </Label>
           <div className="relative">
+            <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               id="password"
-              placeholder="********"
+              name="password"
+              placeholder="Create a password"
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              autoCapitalize="none"
-              autoComplete="password"
-              autoCorrect="off"
-              disabled={isLoading}
+              autoComplete="new-password"
+              disabled={isLoading || googleLoading}
+              required
+              className={`${fieldClass} pr-11`}
             />
-            <span
-              className="absolute right-2 top-1/2 -translate-y-1/2"
-              role="button"
-              onClick={() => setShowPassword(!showPassword)}
+            <button
+              type="button"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              onClick={() => setShowPassword((value) => !value)}
+              className="absolute right-2.5 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
-              {showPassword ? <CgEye /> : <EyeNoneIcon />}
-            </span>
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
-          <Button disabled={email === "" || password === "" || isLoading} className="mt-2">
-            {isLoading && <CgSpinner className="mr-2 h-4 w-4 animate-spin" />}
-            Continue
-          </Button>
+          <p className="text-[11px] leading-5 text-slate-400">Use a password you do not use on other websites.</p>
         </div>
+        <Button
+          type="submit"
+          disabled={!name.trim() || !email.trim() || !password || isLoading || googleLoading}
+          className="h-11 w-full rounded-xl bg-indigo-600 font-semibold text-white shadow-sm shadow-indigo-600/15 hover:bg-indigo-700"
+        >
+          {isLoading && <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}
+          {isLoading ? (
+            "Creating account..."
+          ) : (
+            <>
+              Create account <ArrowRight className="ml-2 h-4 w-4" />
+            </>
+          )}
+        </Button>
       </form>
-      <div className="relative my-4">
+
+      <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
+          <span className="w-full border-t border-slate-200" />
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+        <div className="relative flex justify-center text-[10px] font-semibold uppercase tracking-[0.14em]">
+          <span className="bg-white px-3 text-slate-400">Or sign up with</span>
         </div>
       </div>
+
       <Button
         variant="outline"
         type="button"
-        disabled={isLoading}
-        onClick={() => {
-          const res = signIn("google");
-          console.log(res);
-        }}
+        disabled={isLoading || googleLoading}
+        onClick={handleGoogleSignUp}
+        className="h-11 w-full rounded-xl border-slate-200 bg-white font-medium text-slate-700 hover:bg-slate-50"
       >
-        {isLoading ? <CgSpinner className="mr-2 h-4 w-4 animate-spin" /> : <FcGoogle className="mr-2 h-4 w-4" />} Google
+        {googleLoading ? (
+          <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600" />
+        ) : (
+          <FcGoogle className="mr-2 h-4 w-4" />
+        )}{" "}
+        Continue with Google
       </Button>
 
-      <div className="text-center text-[16px] my-2">
-        <span className="text-muted-foreground">Already have an account?</span>{" "}
-        <Link href="/sign-in" className="underline font-medium">
-          Sign In
+      <p className="mt-6 text-center text-sm text-slate-500">
+        Already have an account?{" "}
+        <Link href="/sign-in" className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">
+          Sign in
         </Link>
-      </div>
-      <p className="px-8 text-center text-xs text-muted-foreground">
-        By clicking continue, you agree to our{" "}
-        <Link href="#" className="underline underline-offset-4 hover:text-primary">
-          Terms of Service
-        </Link>{" "}
-        and{" "}
-        <Link href="#" className="underline underline-offset-4 hover:text-primary">
-          Privacy Policy
-        </Link>
-        .
+      </p>
+      <p className="mt-5 text-center text-[11px] leading-5 text-slate-400">
+        By creating an account, you agree to use Quizvera responsibly.
       </p>
     </>
   );

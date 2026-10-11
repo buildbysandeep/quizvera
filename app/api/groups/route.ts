@@ -11,7 +11,27 @@ export async function GET() {
 
     const groups = await prisma.group.findMany({
       where: {
-        adminId: session?.user?.id!,
+        adminId: session?.user?.id,
+      },
+      select: {
+        id: true,
+        name: true,
+
+        quizzes: {
+          select: {
+            id: true,
+            title: true,
+            published: true,
+            createdAt: true,
+
+            _count: {
+              select: {
+                questions: true,
+                participants: true,
+              },
+            },
+          },
+        },
       },
     });
 

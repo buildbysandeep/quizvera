@@ -1,184 +1,88 @@
 "use client";
 
 import * as React from "react";
-import { CaretSortIcon, CheckIcon, PlusCircledIcon } from "@radix-ui/react-icons";
-
+import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
+import { Layers3 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { DashboardGroupOption } from "@/types/dashboard";
 
-const groups = [
-  {
-    label: "Personal Account",
-    teams: [
-      {
-        label: "Alicia Koch",
-        value: "personal",
-      },
-    ],
-  },
-  {
-    label: "Teams",
-    teams: [
-      {
-        label: "Acme Inc.",
-        value: "acme-inc",
-      },
-      {
-        label: "Monsters Inc.",
-        value: "monsters",
-      },
-    ],
-  },
-];
+export type GroupSwitcherProps = {
+  groups: DashboardGroupOption[];
+  value: string;
+  onValueChange: (value: string) => void;
+  className?: string;
+};
 
-type Team = (typeof groups)[number]["teams"][number];
-
-type PopoverTriggerProps = React.ComponentPropsWithoutRef<typeof PopoverTrigger>;
-
-interface GroupSwitcherProps extends PopoverTriggerProps {}
-
-export default function GroupSwitcher({ className }: GroupSwitcherProps) {
+export default function GroupSwitcher({ groups, value, onValueChange, className }: GroupSwitcherProps) {
   const [open, setOpen] = React.useState(false);
-  const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
-  const [selectedTeam, setSelectedTeam] = React.useState<Team>(groups[0].teams[0]);
+  const selectedGroup = groups.find((group) => group.id === value);
+  const selectedLabel = value === "all" ? "All groups" : (selectedGroup?.name ?? "Select group");
 
   return (
-    <Dialog open={showNewTeamDialog} onOpenChange={setShowNewTeamDialog}>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            aria-label="Select a team"
-            className={cn("w-fit text-xs px-2 xs:text-base xs:px-3 xs:w-[200px] justify-between", className)}
-            size={"sm"}
-          >
-            <Avatar className="mr-2 h-5 w-5">
-              <AvatarImage
-                src={`https://avatar.vercel.sh/${selectedTeam.value}.png`}
-                alt={selectedTeam.label}
-                className="grayscale"
-              />
-              <AvatarFallback>SC</AvatarFallback>
-            </Avatar>
-            {selectedTeam.label}
-            <CaretSortIcon className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0">
-          <Command>
-            <CommandInput placeholder="Search team..." />
-            <CommandList>
-              <CommandEmpty>No team found.</CommandEmpty>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          aria-label="Filter dashboard by group"
+          className={cn(
+            "h-10 w-full justify-between gap-2 rounded-xl border-slate-200 bg-white px-3 text-sm font-medium shadow-sm sm:w-[220px]",
+            className,
+          )}
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-indigo-50">
+              <Layers3 className="h-3.5 w-3.5 text-indigo-600" />
+            </span>
+            <span className="truncate">{selectedLabel}</span>
+          </span>
+          <CaretSortIcon className="h-4 w-4 shrink-0 text-slate-400" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[260px] rounded-xl border-slate-200 p-0 shadow-lg">
+        <Command>
+          <CommandInput placeholder="Search groups..." />
+          <CommandList>
+            <CommandEmpty>No groups found.</CommandEmpty>
+            <CommandGroup heading="Dashboard scope">
+              <CommandItem
+                value="All groups"
+                onSelect={() => {
+                  onValueChange("all");
+                  setOpen(false);
+                }}
+                className="gap-2 py-2.5"
+              >
+                <Layers3 className="h-4 w-4 text-slate-500" />
+                <span>All groups</span>
+                <CheckIcon className={cn("ml-auto h-4 w-4", value === "all" ? "opacity-100" : "opacity-0")} />
+              </CommandItem>
               {groups.map((group) => (
-                <CommandGroup key={group.label} heading={group.label}>
-                  {group.teams.map((team) => (
-                    <CommandItem
-                      key={team.value}
-                      onSelect={() => {
-                        setSelectedTeam(team);
-                        setOpen(false);
-                      }}
-                      className="text-sm"
-                    >
-                      <Avatar className="mr-2 h-5 w-5">
-                        <AvatarImage
-                          src={`https://avatar.vercel.sh/${team.value}.png`}
-                          alt={team.label}
-                          className="grayscale"
-                        />
-                        <AvatarFallback>SC</AvatarFallback>
-                      </Avatar>
-                      {team.label}
-                      <CheckIcon
-                        className={cn("ml-auto h-4 w-4", selectedTeam.value === team.value ? "opacity-100" : "opacity-0")}
-                      />
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
+                <CommandItem
+                  key={group.id}
+                  value={`${group.name} ${group.id}`}
+                  onSelect={() => {
+                    onValueChange(group.id);
+                    setOpen(false);
+                  }}
+                  className="gap-2 py-2.5"
+                >
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-slate-100 text-[10px] font-bold uppercase text-slate-600">
+                    {group.name.trim().slice(0, 2) || "G"}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">{group.name}</span>
+                  <CheckIcon className={cn("h-4 w-4", value === group.id ? "opacity-100" : "opacity-0")} />
+                </CommandItem>
               ))}
-            </CommandList>
-            <CommandSeparator />
-            <CommandList>
-              <CommandGroup>
-                <DialogTrigger asChild>
-                  <CommandItem
-                    onSelect={() => {
-                      setOpen(false);
-                      setShowNewTeamDialog(true);
-                    }}
-                  >
-                    <PlusCircledIcon className="mr-2 h-5 w-5" />
-                    Create Team
-                  </CommandItem>
-                </DialogTrigger>
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create team</DialogTitle>
-          <DialogDescription>Add a new team to manage products and customers.</DialogDescription>
-        </DialogHeader>
-        <div>
-          <div className="space-y-4 py-2 pb-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Team name</Label>
-              <Input id="name" placeholder="Acme Inc." />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="plan">Subscription plan</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a plan" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="free">
-                    <span className="font-medium">Free</span> -{" "}
-                    <span className="text-muted-foreground">Trial for two weeks</span>
-                  </SelectItem>
-                  <SelectItem value="pro">
-                    <span className="font-medium">Pro</span> -{" "}
-                    <span className="text-muted-foreground">$9/month per user</span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowNewTeamDialog(false)}>
-            Cancel
-          </Button>
-          <Button type="submit">Continue</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }

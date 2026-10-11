@@ -1,56 +1,55 @@
+"use client";
+
 import React from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "../ui/button";
-import { Label } from "../ui/label";
-import { error, success } from "@/lib/utils";
-import { Loader2, Trash2Icon } from "lucide-react";
-import { deleteGroupDB } from "@/lib/actions/group.actions";
-import { useGroups } from "@/hooks/useGroups";
-import { useDataStore } from "@/stores/data";
 import { useRouter } from "next/navigation";
+import { AlertTriangle, Loader2, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { error, success } from "@/lib/utils";
+import { deleteGroupDB } from "@/lib/actions/group.actions";
+import { useDataStore } from "@/stores/data";
 
 const DeleteGroup = ({ id }: { id: string }) => {
-  const navigate = useRouter();
-  const { groups, setGroups } = useDataStore();
+  const router = useRouter();
+  const groups = useDataStore((state) => state.groups ?? []);
+  const setGroups = useDataStore((state) => state.setGroups);
   const [open, setOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
 
-  const handledelete = async () => {
+  const handleDelete = async () => {
+    if (loading) return;
     setLoading(true);
-    const res = await deleteGroupDB({ id });
-    setLoading(false);
-    if (!res.ok) return error(res.error!);
-
-    const updatedGroups = groups.filter((group) => group.id !== id);
-    setGroups(updatedGroups);
-    setOpen(false);
-    success("Group deleted successfully");
-    navigate.replace("/");
+    try {
+      const result = await deleteGroupDB({ id });
+      if (!result.ok) { error(result.error || "Could not delete group."); return; }
+      setGroups(groups.filter((group) => group.id !== id));
+      setOpen(false);
+      success("Group deleted successfully");
+      router.replace("/");
+    } catch {
+      error("A network error occurred while deleting the group.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(nextOpen) => !loading && setOpen(nextOpen)}>
       <DialogTrigger asChild>
-        <Trash2Icon className="w-4 h-4 text-red-500 cursor-pointer" />
+        <Button type="button" variant="ghost" size="icon" aria-label="Delete group" className="h-9 w-9 rounded-xl text-rose-600 hover:bg-rose-50 hover:text-rose-700">
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </DialogTrigger>
-      <DialogDescription className="sr-only">Delete Group</DialogDescription>
-      <DialogContent>
-        <DialogTitle className="">Delete Group</DialogTitle>
-        <Label htmlFor="question" className="text-sm font-normal">
-          Are you sure you want to delete this group? This action cannot be undone
-        </Label>
-        <DialogFooter className="flex gap-2">
-          <Button variant={"outline"} onClick={() => setOpen(false)} size={"sm"}>
-            Cancel
-          </Button>
-          <Button
-            variant={"outline"}
-            onClick={handledelete}
-            className="bg-red-100 text-red-500"
-            size={"sm"}
-            disabled={loading}
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete"}
+      <DialogContent className="rounded-2xl border-slate-200 sm:max-w-md">
+        <DialogHeader>
+          <div className="mb-2 grid h-11 w-11 place-items-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-inset ring-rose-100"><AlertTriangle className="h-5 w-5" /></div>
+          <DialogTitle className="text-lg font-bold text-slate-900">Delete this group?</DialogTitle>
+          <DialogDescription className="text-sm leading-6">This permanently removes the group and its associated quizzes and participant records. This action cannot be undone.</DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="mt-3 gap-2 sm:gap-2">
+          <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading} className="rounded-xl">Cancel</Button>
+          <Button type="button" variant="destructive" onClick={handleDelete} disabled={loading} className="rounded-xl">
+            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting…</> : <><Trash2 className="mr-2 h-4 w-4" /> Delete group</>}
           </Button>
         </DialogFooter>
       </DialogContent>

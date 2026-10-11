@@ -2,8 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================
+   1. TYPOGRAPHY
+   ========================================================= */
+
 :root {
   --font: "Outfit", sans-serif;
+
+  /* Keep existing font aliases for compatibility */
   --font-thin: "Outfit", sans-serif;
   --font-extra-light: "Outfit", sans-serif;
   --font-regular: "Outfit", sans-serif;
@@ -13,119 +19,230 @@
   --font-extra-bold: "Outfit", sans-serif;
 }
 
-body {
-  font-family: var(--font);
+/* =========================================================
+   2. SHADCN / GLOBAL DESIGN TOKENS
+   HSL values without the hsl() wrapper are intentional.
+   ========================================================= */
+
+@layer base {
+  :root {
+    color-scheme: light;
+
+    /* Backgrounds and text */
+    --background: 210 40% 98%;
+    --foreground: 222.2 47.4% 11.2%;
+
+    /* Cards */
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+
+    /* Popovers and dropdowns */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+
+    /* Primary: Indigo */
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary: Slate */
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    /* Muted elements */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    /* Accent: Light indigo */
+    --accent: 226 100% 97%;
+    --accent-foreground: 243 75% 35%;
+
+    /* Destructive: Rose */
+    --destructive: 350 89% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders and form inputs */
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 243 75% 59%;
+
+    /* Feedback colors */
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 222.2 47.4% 11.2%;
+
+    --info: 243 75% 59%;
+    --info-foreground: 0 0% 100%;
+
+    /* Charts */
+    --chart-1: 243 75% 59%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 350 89% 60%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 199 89% 48%;
+
+    /* Consistent corner radius */
+    --radius: 0.875rem;
+  }
+
+  /* =======================================================
+     DARK THEME
+     Activated when .dark is applied to the root element.
+     ======================================================= */
+
+  .dark {
+    color-scheme: dark;
+
+    --background: 222.2 47.4% 7%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 40% 10%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 40% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 243 75% 68%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 243 35% 19%;
+    --accent-foreground: 226 100% 90%;
+
+    --destructive: 350 75% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 217.2 32.6% 20%;
+    --input: 217.2 32.6% 20%;
+    --ring: 243 75% 68%;
+
+    --success: 160 65% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 55%;
+    --warning-foreground: 222.2 47.4% 11.2%;
+
+    --info: 243 75% 68%;
+    --info-foreground: 0 0% 100%;
+
+    --chart-1: 243 75% 68%;
+    --chart-2: 160 65% 45%;
+    --chart-3: 350 75% 60%;
+    --chart-4: 38 92% 55%;
+    --chart-5: 199 89% 58%;
+  }
+
+  /* Global reset and base styles */
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+
+    font-family: var(--font);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  ::selection {
+    color: hsl(var(--foreground));
+    background: hsl(var(--primary) / 0.18);
+  }
 }
 
-.font-thin {
-  font-family: var(--font-thin);
+/* =========================================================
+   3. REUSABLE COMPONENT UTILITIES
+   ========================================================= */
+
+@layer components {
+  /* Softer title shadow */
+  .title-shadow {
+    box-shadow:
+      0 1px 2px rgb(15 23 42 / 0.05),
+      0 4px 12px rgb(15 23 42 / 0.05);
+  }
+
+  /* Standard application card */
+  .app-card {
+    @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
+  }
+
+  /* Assessment status labels */
+  .status-correct {
+    @apply border border-emerald-200 bg-emerald-50 text-emerald-700;
+  }
+
+  .status-incorrect {
+    @apply border border-rose-200 bg-rose-50 text-rose-700;
+  }
+
+  .status-unanswered {
+    @apply border border-slate-200 bg-slate-100 text-slate-600;
+  }
+
+  /* Code and preformatted content */
+  .code-container {
+    @apply overflow-hidden rounded-xl border border-slate-800 bg-slate-950;
+  }
 }
 
-.font-extralight {
-  font-family: var(--font-extra-light);
-}
-
-.font-regular {
-  font-family: var(--font-regular);
-}
-
-.font-medium {
-  font-family: var(--font-medium);
-}
-
-.font-semibold {
-  font-family: var(--font-semi-bold);
-}
-
-.font-bold {
-  font-family: var(--font-bold);
-}
-
-.font-extrabold {
-  font-family: var(--font-extra-bold);
-}
-
-.title-shadow {
-  box-shadow: rgba(45, 35, 66, 0.2) 0 2px 4px, rgba(45, 35, 66, 0.15) 0 7px 13px -3px, #d6d6e7 0 -3px 0 inset;
-}
+/* =========================================================
+   4. QUIZ CONTROLS
+   ========================================================= */
 
 .quiz span[data-state="checked"] {
-  background-color: purple;
-  margin: auto;
+  display: block;
   width: 11px;
   height: 11px;
-  border-radius: 50%;
+  margin: auto;
+  border-radius: 9999px;
+  background-color: hsl(var(--primary));
   color: transparent;
-  /* margin-top: -0.3px; */
 }
+
+/* =========================================================
+   5. CUSTOM UTILITIES
+   ========================================================= */
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-}
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+  .text-pretty {
+    text-wrap: pretty;
   }
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-  }
-}
 
-@layer base {
-  * {
-    @apply border-border;
+  .shadow-card {
+    box-shadow:
+      0 1px 2px rgb(15 23 42 / 0.04),
+      0 4px 12px rgb(15 23 42 / 0.04);
   }
-  body {
-    @apply bg-background text-foreground;
+
+  .shadow-card-hover {
+    box-shadow:
+      0 4px 8px rgb(15 23 42 / 0.04),
+      0 12px 24px rgb(15 23 42 / 0.06);
   }
 }

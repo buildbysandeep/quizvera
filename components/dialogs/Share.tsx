@@ -1,94 +1,99 @@
 "use client";
 
-import { CopyIcon, ReloadIcon } from "@radix-ui/react-icons";
+import React from "react";
+import { Check, Copy, Link2, Loader2, Share2, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import React, { useEffect } from "react";
 import { publishQuizDB, unPublishQuizDB } from "@/lib/actions/quiz.actions";
 import { error, success } from "@/lib/utils";
 import { IQuiz } from "@/types";
 
-export function PublishQuiz({
-  id,
-  isPublished,
-  setData,
-}: {
-  id: string;
-  isPublished: boolean;
-  setData: React.Dispatch<React.SetStateAction<IQuiz | null>>;
-}) {
+export function PublishQuiz({ id, isPublished, setData }: { id: string; isPublished: boolean; setData: React.Dispatch<React.SetStateAction<IQuiz | null>> }) {
   const [open, setOpen] = React.useState(false);
-  const [generated, setGenerated] = React.useState(false);
-  const [unlinked, setUnlinked] = React.useState(false);
+  const [published, setPublished] = React.useState(isPublished);
+  const [loading, setLoading] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const shareUrl = `${appUrl || (typeof window !== "undefined" ? window.location.origin : "")}/share/quiz/${id}`;
 
-  const app_url = process.env.NEXT_PUBLIC_APP_URL;
+  React.useEffect(() => setPublished(isPublished), [isPublished]);
 
-  const stopSharing = async () => {
-    setUnlinked(true);
-    const res = await unPublishQuizDB({ quizId: id });
-    if (!res.ok) return error(res.error!);
-    setData((prev) => (prev ? { ...prev, published: false } : null));
-    setUnlinked(false);
-    // success("Link removed successfully");
-    setOpen(false);
+  const handleOpen = async () => {
+    if (published) { setOpen(true); return; }
+    if (loading) return;
+    setLoading(true);
+    try {
+      const result = await publishQuizDB({ quizId: id });
+      if (!result.ok) { error(result.error || "Could not publish quiz."); return; }
+      setPublished(true);
+      setData((current) => current ? { ...current, published: true } : null);
+      success("Quiz published successfully");
+      setOpen(true);
+    } catch {
+      error("A network error occurred while publishing the quiz.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handlePublish = async () => {
-    if (isPublished) return;
-    setGenerated(true);
-    const res = await publishQuizDB({ quizId: id });
-    if (!res.ok) return error(res.error!);
-    setData((prev) => (prev ? { ...prev, published: true } : null));
-    setGenerated(false);
-    // success("Link generated successfully");
+  const handleUnpublish = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const result = await unPublishQuizDB({ quizId: id });
+      if (!result.ok) { error(result.error || "Could not unpublish quiz."); return; }
+      setPublished(false);
+      setData((current) => current ? { ...current, published: false } : null);
+      setCopied(false);
+      success("Quiz unpublished successfully");
+      setOpen(false);
+    } catch {
+      error("A network error occurred while unpublishing the quiz.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      success("Quiz link copied");
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      error("Unable to copy the link. Copy it from the field instead.");
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild className="">
-        <Button variant="outline" className="w-fit" onClick={handlePublish}>
-          {isPublished ? "Unpublish" : "Publish"}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{!generated ? "Share" : "generating"} link</DialogTitle>
-          <DialogDescription>Anyone who has this link will be able to view this quiz.</DialogDescription>
-        </DialogHeader>
-        <div className="flex items-center space-x-2">
-          <div className="grid flex-1 gap-2">
-            <Label htmlFor="link" className="sr-only">
-              Link
-            </Label>
-            {!generated ? (
-              <Input id="link" defaultValue={app_url + "/share/quiz/" + id} readOnly />
-            ) : (
-              <ReloadIcon className="h-4 w-4 animate-spin" />
-            )}
+    <>
+      <Button type="button" variant={published ? "outline" : "default"} size="sm" onClick={handleOpen} disabled={loading} className={`h-9 gap-2 rounded-xl ${published ? "border-slate-200 bg-white" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}>
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+        {published ? "Share settings" : "Publish quiz"}
+      </Button>
+      <Dialog open={open} onOpenChange={(nextOpen) => !loading && setOpen(nextOpen)}>
+        <DialogContent className="rounded-2xl border-slate-200 sm:max-w-lg">
+          <DialogHeader>
+            <div className="mb-2 grid h-11 w-11 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><Link2 className="h-5 w-5" /></div>
+            <DialogTitle className="text-lg font-bold text-slate-900">Share your quiz</DialogTitle>
+            <DialogDescription>Anyone with this link can open the participant-facing quiz page.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor={`share-link-${id}`} className="text-sm font-semibold text-slate-700">Quiz link</Label>
+            <div className="flex gap-2">
+              <Input id={`share-link-${id}`} readOnly value={shareUrl} className="h-10 min-w-0 rounded-xl bg-slate-50" onFocus={(event) => event.currentTarget.select()} />
+              <Button type="button" onClick={handleCopy} variant="outline" className="shrink-0 rounded-xl" aria-label="Copy quiz link"><span className="hidden sm:inline">{copied ? "Copied" : "Copy"}</span>{copied ? <Check className="h-4 w-4 sm:ml-2" /> : <Copy className="h-4 w-4 sm:ml-2" />}</Button>
+            </div>
+            <p className="text-xs leading-5 text-slate-500">Publishing makes the quiz available through its share link. Unpublishing disables sharing through that link.</p>
           </div>
-        </div>
-        <DialogFooter className="flex flex-row items-center justify-between">
-          <DialogClose asChild>
-            <Button type="button" variant="secondary">
-              Close
-            </Button>
-          </DialogClose>
-          <Button type="button" size={"sm"} onClick={stopSharing}>
-            {unlinked ? <ReloadIcon className="h-4 w-4 animate-spin" /> : "Stop sharing"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="rounded-xl">Done</Button>
+            {published && <Button type="button" variant="destructive" onClick={handleUnpublish} disabled={loading} className="rounded-xl"><ShieldOff className="mr-2 h-4 w-4" /> Stop sharing</Button>}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

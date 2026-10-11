@@ -20,6 +20,7 @@ import {
   PanelLeftOpen,
   Plus,
   Users,
+  UserRound,
 } from "lucide-react";
 import { SiPlatformdotsh } from "react-icons/si";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -39,6 +40,7 @@ type SidebarQuiz = {
 
 type SidebarGroup = {
   id: string;
+  slug?: string | null;
   name: string;
   quizzes?: SidebarQuiz[] | null;
 };
@@ -54,12 +56,15 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const routeId = searchParams.get("id");
+  const routeGroupSlug = pathname.startsWith("/group/") ? pathname.split("/")[2] : null;
   const quizSlug = pathname.startsWith("/quiz/") ? pathname.split("/")[2] : null;
   const groupQueryId = searchParams.get("group");
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [miniOpenGroupId, setMiniOpenGroupId] = useState<string | null>(null);
 
   const { data, isLoading, error: loadError } = useSWR("/api/groups", fetcher, fetcherOpt);
+  const { data: sharedData } = useSWR("/api/shared-quizzes", fetcher, fetcherOpt);
+  const sharedQuizCount = Array.isArray(sharedData?.data) ? sharedData.data.length : 0;
 
   useEffect(() => {
     if (data?.ok && Array.isArray(data.data)) {
@@ -71,10 +76,19 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
   const isMyQuizzesActive = pathname.startsWith("/my-quizes");
   const isSharedQuizzesActive = pathname.startsWith("/shared-quizzes");
   const isImageLibraryActive = pathname.startsWith("/image-library");
+  const isProfileActive = pathname.startsWith("/profile");
   const isGroupRoute = pathname.startsWith("/group");
   const isQuizRoute = pathname.startsWith("/quiz");
-  const activeQuizId = isQuizRoute && pathname !== "/quiz/create" ? (groups.flatMap((group) => group.quizzes ?? []).find((quiz) => quiz.slug === quizSlug)?.id ?? routeId) : null;
-  const activeGroupId = isGroupRoute ? routeId : pathname === "/quiz/create" ? groupQueryId : null;
+  const activeQuizId =
+    isQuizRoute && pathname !== "/quiz/create"
+      ? (groups.flatMap((group) => group.quizzes ?? []).find((quiz) => quiz.slug === quizSlug)?.id ?? routeId)
+      : null;
+  const activeGroupId = isGroupRoute
+    ? (groups.find((group) => group.slug === routeGroupSlug || group.id === routeGroupSlug || group.id === routeId)?.id ??
+      routeId)
+    : pathname === "/quiz/create"
+      ? groupQueryId
+      : null;
 
   const activeQuizGroupId = activeQuizId
     ? groups.find((group) => (group.quizzes ?? []).some((quiz) => quiz.id === activeQuizId))?.id
@@ -83,7 +97,11 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
 
   useEffect(() => {
     if (!groupToAutoExpand) return;
-    setExpandedGroups((current) => (current[groupToAutoExpand] ? current : { ...current, [groupToAutoExpand]: true }));
+    setExpandedGroups((current) =>
+      current[groupToAutoExpand] && Object.keys(current).filter((key) => current[key]).length === 1
+        ? current
+        : { [groupToAutoExpand]: true },
+    );
   }, [groupToAutoExpand]);
 
   // Close the compact group's popover after navigating to another route.
@@ -92,10 +110,7 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
   }, [pathname, routeId]);
 
   const toggleGroup = (groupId: string) => {
-    setExpandedGroups((current) => ({
-      ...current,
-      [groupId]: !current[groupId],
-    }));
+    setExpandedGroups((current) => (current[groupId] ? {} : { [groupId]: true }));
   };
 
   const getGroupInitial = (name: string) => {
@@ -195,6 +210,16 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
         >
           <Users className="h-[18px] w-[18px] shrink-0" />
           {!collapsed && <span className="flex-1">Shared with me</span>}
+          {!collapsed && sharedQuizCount > 0 && (
+            <span className="min-w-5 rounded-md bg-slate-100 px-1.5 py-0.5 text-center text-[10px] font-bold tabular-nums text-slate-600">
+              {sharedQuizCount > 99 ? "99+" : sharedQuizCount}
+            </span>
+          )}
+          {collapsed && sharedQuizCount > 0 && (
+            <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-indigo-600 px-0.5 text-[8px] font-bold text-white">
+              {sharedQuizCount > 9 ? "9+" : sharedQuizCount}
+            </span>
+          )}
           {!collapsed && isSharedQuizzesActive && <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />}
           {collapsed && isSharedQuizzesActive && <span className="absolute -left-2 h-6 w-1 rounded-r-full bg-indigo-600" />}
         </Link>
@@ -211,6 +236,19 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
           {!collapsed && isImageLibraryActive && <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />}
           {collapsed && isImageLibraryActive && <span className="absolute -left-2 h-6 w-1 rounded-r-full bg-indigo-600" />}
         </Link>
+        {/* <Link
+          href="/profile"
+          title={collapsed ? "Profile" : undefined}
+          aria-label="Profile"
+          className={`group relative mt-1 flex items-center rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+            collapsed ? "mx-auto h-11 w-11 justify-center" : "gap-3 px-3 py-2.5"
+          } ${isProfileActive ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"}`}
+        >
+          <UserRound className="h-[18px] w-[18px] shrink-0" />
+          {!collapsed && <span className="flex-1">Profile</span>}
+          {!collapsed && isProfileActive && <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />}
+          {collapsed && isProfileActive && <span className="absolute -left-2 h-6 w-1 rounded-r-full bg-indigo-600" />}
+        </Link> */}
       </nav>
 
       {/* Group navigation */}
@@ -220,14 +258,14 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
       >
         <div className={`mb-2 flex items-center ${collapsed ? "justify-center" : "justify-between px-3"}`}>
           {!collapsed && <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Your workspace</p>}
-          <span
+          {/* <span
             title={`${groups.length} groups`}
             className={`rounded-md bg-slate-100 text-[10px] font-semibold tabular-nums text-slate-500 ${
               collapsed ? "grid h-5 min-w-5 place-items-center px-1" : "px-1.5 py-0.5"
             }`}
           >
             {groups.length}
-          </span>
+          </span> */}
         </div>
 
         <div className="min-h-0 w-full flex-1 space-y-1 overflow-y-auto overflow-x-hidden pb-3">
@@ -277,7 +315,8 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
           {groups.map((group) => {
             const quizzes = group.quizzes ?? [];
             const isGroupActive =
-              (isGroupRoute && routeId === group.id) || (pathname === "/quiz/create" && groupQueryId === group.id);
+              (isGroupRoute && (routeId === group.id || routeGroupSlug === group.slug || routeGroupSlug === group.id)) ||
+              (pathname === "/quiz/create" && groupQueryId === group.id);
             const containsActiveQuiz = Boolean(activeQuizId && quizzes.some((quiz) => quiz.id === activeQuizId));
             const groupIsHighlighted = isGroupActive || containsActiveQuiz;
             const isExpanded = Boolean(expandedGroups[group.id]);
@@ -326,7 +365,7 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
                           </div>
                         </div>
                         <Link
-                          href={`/group?id=${group.id}`}
+                          href={`/group/${group.slug || group.id}`}
                           onClick={() => setMiniOpenGroupId(null)}
                           className="mt-3 flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
                         >
@@ -409,7 +448,7 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
                   }`}
                 >
                   <Link
-                    href={`/group?id=${group.id}`}
+                    href={`/group/${group.slug || group.id}`}
                     title={group.name}
                     aria-label={`Open group ${group.name}`}
                     className={`flex min-w-0 flex-1 items-center gap-2.5 rounded-l-xl py-2.5 pl-2.5 pr-1 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${

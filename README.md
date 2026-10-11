@@ -47,6 +47,10 @@ Quizvera is built as a secure, multi-tenant quiz application for schools, coachi
 - Quiz collaboration with a permanent primary admin and removable shared admins
 - Participant history in **My quizzes** and a separate **Shared with me** workspace
 - Participant deletion that removes their quiz answers and submitted fields
+- Shared quiz availability: timer from publishing, manual admin start/waiting room, or a fixed opening/closing window
+- Dedicated `/quiz/<slug>/questions` question-bank page, separate from quiz settings
+- Live admin-side availability status with a shared open/close countdown; participant shared-timer banner stays sticky and replaces the default timer banner when a shared deadline exists
+- Dashboard folder visualization showing quizzes nested under each group/folder, with live/draft status and question/participant counts
 - Optional AI generation hooks for Gemini/OpenAI
 
 ## 🛠️ Prerequisites
@@ -91,6 +95,7 @@ Create a `.env` file at the project root and provide values for the following va
 
 - `DATABASE_URL` — MongoDB connection string
 - `AUTH_SECRET` — secret for Auth.js sessions and signed quiz-attempt tokens (use a random value of at least 32 bytes)
+- `CRON_SECRET` — secret for the scheduled quiz-expiry endpoint; configure your hosting scheduler to call `/api/cron/expire-quizzes` with `Authorization: Bearer <CRON_SECRET>` once per minute
 - `AUTH_TRUST_HOST` — set to `true` for the configured deployment environment when required
 - `NEXTAUTH_URL` — application base URL
 - `NEXT_PUBLIC_APP_URL` — public app URL used by client code
@@ -132,9 +137,23 @@ The Prisma command generates the updated client and pushes the additive schema c
 
 ```bash
 node prisma/backfill-quiz-slugs.mjs
+node prisma/backfill-group-slugs.mjs
 ```
 
-Take a backup before running schema changes on production. Existing quiz images are imported into each owner's personal image library the first time they open the image picker. New uploads are saved to that user's library immediately and can be reused across quizzes. The `/image-library` page shows image usage, and the API blocks permanent deletion while any quiz references the image. First remove an image from every quiz using it; then the unused asset can be deleted from the library.
+Take a backup before running schema changes on production. Existing quiz images are imported into each owner's personal image library the first time they open the image picker. New uploads are saved to that user's library immediately and can be reused across quizzes. The `/image-library` page shows image usage, and the API blocks permanent deletion while any quiz or profile picture references the image. First remove an image from every quiz using it; then the unused asset can be deleted from the library.
+
+Profile pictures are uploaded to a separate Cloudinary profile folder and are not added to the reusable quiz-image library. When a profile picture is replaced, the previous file is deleted if no quiz, other profile, or image library still references it. Assets still in use are preserved to avoid broken quiz covers.
+
+### Shared availability timers
+
+The per-participant `duration` timer is still independent. The optional shared availability setting has four modes: always available, close a set time after publishing, a manual timer started by an admin after publishing a waiting room, or a fixed start/end schedule. The public API withholds question content while a quiz is waiting and validates the shared deadline again during registration/submission. A scheduler endpoint also persists expired quizzes as unpublished:
+
+```text
+GET /api/cron/expire-quizzes
+Authorization: Bearer <CRON_SECRET>
+```
+
+Configure your host's scheduler to invoke it once per minute. Even if the scheduler is delayed, share links and submissions are still denied at the end time by server-side deadline checks. Participants already in the quiz receive a short 30-second submission grace for network delivery at the shared cutoff.
 
 Quiz collaborators are invited by email and must already have a Quizvera account. The quiz's primary admin is derived from the owner of its group; only that primary admin can add/remove collaborators or move the quiz. The primary admin always remains in the admin list. Duplicating a quiz creates a draft and does not duplicate participation/results.
 
@@ -142,11 +161,14 @@ Quiz collaborators are invited by email and must already have a Quizvera account
 
 ### URL conventions
 
+- `/group/<group-slug>` — group workspace
 - `/quiz/<slug>` — quiz details and management
 - `/quiz/<slug>/edit` — quiz editor
+- `/quiz/<slug>/questions` — protected question bank management
 - `/quiz/<slug>/participants` — participant analytics and answer reports
 - `/share/quiz/<slug>` — public quiz participation
 - `/share/quiz/<slug>/result` — submission confirmation
+- `/profile` — profile name and picture, with current Free plan
 
 Database IDs remain internal foreign keys. Legacy links that used `?id=<ObjectId>` or an ObjectId as a quiz path segment are retained as compatibility redirects while old data and bookmarks are migrated.
 

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useDataStore } from "@/stores/data";
 import { CalendarDateRangePicker } from "@/components/dashboard/components/date-range-picker";
 import GroupSwitcher from "@/components/dashboard/components/group-switcher";
+import FolderStructure from "@/components/dashboard/components/folder-structure";
 import { Overview } from "@/components/dashboard/components/overview";
 import { RecentScores } from "@/components/dashboard/components/recent-scores";
 import { TopScores } from "@/components/dashboard/components/top-scores";
@@ -99,8 +100,8 @@ export default function DashboardPage() {
 
   const selectedGroupName =
     selectedGroupId === "all"
-      ? "all your groups"
-      : (groupOptions.find((group) => group.id === selectedGroupId)?.name ?? "selected group");
+      ? "all your folders"
+      : (groupOptions.find((group) => group.id === selectedGroupId)?.name ?? "selected folder");
 
   if (isLoading && !dashboard) {
     return (
@@ -194,16 +195,66 @@ export default function DashboardPage() {
         </div>
       ) : null} */}
 
+      <FolderStructure groups={groups} selectedGroupId={selectedGroupId} />
+
       {/* Metric cards */}
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 xl:gap-4">
-        <StatCard title="Total groups" value={formatNumber(stats.totalGroups)} description="Groups in this workspace" icon={Layers3} tone="indigo" />
-        <StatCard title="Total quizzes" value={formatNumber(stats.totalQuizzes)} description={`${formatNumber(stats.publishedQuizzes)} published · ${formatNumber(stats.draftQuizzes)} drafts`} icon={ClipboardList} tone="violet" />
-        <StatCard title="Published quizzes" value={formatNumber(stats.publishedQuizzes)} description="Available when shared" icon={CheckCircle2} tone="emerald" />
-        <StatCard title="Draft quizzes" value={formatNumber(stats.draftQuizzes)} description="Not yet published" icon={ListChecks} tone="amber" />
-        <StatCard title="Total questions" value={formatNumber(stats.totalQuestions)} description="Across quizzes in scope" icon={ListChecks} tone="slate" />
-        <StatCard title="Total submissions" value={formatNumber(stats.totalSubmissions)} description="All-time quiz submissions" icon={Users} tone="indigo" />
-        <StatCard title="Qualified submissions" value={formatNumber(stats.qualifiedSubmissions)} description="Submissions marked qualified" icon={ShieldCheck} tone="emerald" />
-        <StatCard title="Submissions in range" value={formatNumber(stats.submissionsInRange)} description="Within the selected dates" icon={Activity} tone="rose" />
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-3 xl:gap-4">
+        {/* <StatCard
+          title="Total groups"
+          value={formatNumber(stats.totalGroups)}
+          description="Groups in this workspace"
+          icon={Layers3}
+          tone="indigo"
+        /> */}
+        <StatCard
+          title="Total quizzes"
+          value={formatNumber(stats.totalQuizzes)}
+          description={`${formatNumber(stats.publishedQuizzes)} published · ${formatNumber(stats.draftQuizzes)} drafts`}
+          icon={ClipboardList}
+          tone="violet"
+        />
+        <StatCard
+          title="Published quizzes"
+          value={formatNumber(stats.publishedQuizzes)}
+          description="Available when shared"
+          icon={CheckCircle2}
+          tone="emerald"
+        />
+        <StatCard
+          title="Draft quizzes"
+          value={formatNumber(stats.draftQuizzes)}
+          description="Not yet published"
+          icon={ListChecks}
+          tone="amber"
+        />
+        {/* <StatCard
+          title="Total questions"
+          value={formatNumber(stats.totalQuestions)}
+          description="Across quizzes in scope"
+          icon={ListChecks}
+          tone="slate"
+        /> */}
+        <StatCard
+          title="Total submissions"
+          value={formatNumber(stats.totalSubmissions)}
+          description="All-time quiz submissions"
+          icon={Users}
+          tone="indigo"
+        />
+        <StatCard
+          title="Qualified submissions"
+          value={formatNumber(stats.qualifiedSubmissions)}
+          description="Submissions marked qualified"
+          icon={ShieldCheck}
+          tone="emerald"
+        />
+        <StatCard
+          title="Submissions in range"
+          value={formatNumber(stats.submissionsInRange)}
+          description="Within the selected dates"
+          icon={Activity}
+          tone="rose"
+        />
       </section>
 
       {/* Activity chart */}

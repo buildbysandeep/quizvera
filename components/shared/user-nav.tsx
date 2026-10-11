@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Session } from "next-auth";
 import { signOut } from "next-auth/react";
-import { LogOut, UserRound } from "lucide-react";
+import { LogOut, Settings, UserRound } from "lucide-react";
 
 export function UserNav({ session }: { session: Session }) {
   const name = session.user?.name?.trim() || "User";
@@ -65,9 +66,8 @@ export function UserNav({ session }: { session: Session }) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled className="gap-2 rounded-lg px-3 py-2 text-xs text-slate-500">
-          <UserRound className="h-3.5 w-3.5" />
-          Signed in account
+        <DropdownMenuItem asChild className="gap-2 rounded-lg px-3 py-2 text-sm">
+          <Link href="/profile"><Settings className="h-4 w-4" />Profile settings</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

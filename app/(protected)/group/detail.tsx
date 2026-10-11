@@ -39,9 +39,9 @@ const formatDate = (value: IQuiz["createdAt"]) => {
   });
 };
 
-const Detail = ({ id }: { id: string }) => {
+const Detail = ({ slug }: { slug: string }) => {
   const router = useRouter();
-  const { data, isLoading } = useSWR(`/api/groups/${id}`, fetcher, fetcherOpt);
+  const { data, isLoading } = useSWR(slug ? `/api/groups/${slug}` : null, fetcher, fetcherOpt);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<QuizFilter>("all");
 
@@ -51,11 +51,15 @@ const Detail = ({ id }: { id: string }) => {
   const draftCount = quizzes.length - publishedCount;
 
   useEffect(() => {
+    if (!isLoading && data?.ok && data.group && data.legacyRedirectSlug && data.legacyRedirectSlug !== slug) {
+      router.replace(`/group/${data.legacyRedirectSlug}`);
+      return;
+    }
     if (!isLoading && (!data || !data.ok || !data.group)) {
       error("No page found! Redirecting...", 1000);
       router.replace("/");
     }
-  }, [data, isLoading, router]);
+  }, [data, isLoading, router, slug]);
 
   const filteredQuizzes = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -125,14 +129,14 @@ const Detail = ({ id }: { id: string }) => {
 
             <div className="flex shrink-0 items-center gap-2 self-start">
               <Button asChild className="h-10 gap-2 rounded-xl px-4 shadow-sm">
-                <Link href={`/quiz/create?group=${id}`}>
+                <Link href={`/quiz/create?group=${group.id}`}>
                   <Plus className="h-4 w-4" />
                   Create quiz
                 </Link>
               </Button>
 
               <div className="flex h-10 items-center rounded-xl border border-slate-200 bg-white px-1 shadow-sm [&_button]:rounded-lg">
-                <DeleteGroup id={id} />
+                <DeleteGroup id={group.id} />
               </div>
             </div>
           </div>
@@ -302,7 +306,7 @@ const Detail = ({ id }: { id: string }) => {
               </Button>
             ) : (
               <Button asChild className="mt-4 gap-2 rounded-xl">
-                <Link href={`/quiz/create?group=${id}`}>
+                <Link href={`/quiz/create?group=${group.id}`}>
                   <Plus className="h-4 w-4" />
                   Create your first quiz
                   <ArrowRight className="h-4 w-4" />

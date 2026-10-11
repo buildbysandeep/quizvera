@@ -3,8 +3,8 @@
 import type { IImage } from "@/types";
 import { getCurrentUserId, getAccessibleQuestion, getAccessibleQuiz, getOwnedQuiz, userOwnsGroup } from "@/lib/authorization";
 import { prisma } from "@/lib/prisma";
-import { deleteCloudinaryImages } from "@/lib/cloudinary";
 import { slugifyQuizTitle } from "@/lib/quiz-slug";
+import { evaluateQuizAvailability } from "@/lib/quiz-availability";
 
 function stringValue(values: { [key: string]: FormDataEntryValue }, key: string): string {
   const value = values[key];
@@ -75,8 +75,22 @@ export const getQuizBySlugDB = async ({ slug }: { slug: string }) => {
         questions: { include: { options: true } },
         group: { select: { name: true, adminId: true, admin: { select: { id: true, name: true, email: true } } } },
         collaborators: { select: { userId: true } },
+        _count: { select: { participants: true } },
       },
     });
+    // Redirect old slugs after a title rename to the current canonical slug.
+    if (!data) {
+      data = await prisma.quiz.findFirst({
+        where: { previousSlugs: { has: slug } },
+        include: {
+          images: true,
+          questions: { include: { options: true } },
+          group: { select: { name: true, adminId: true, admin: { select: { id: true, name: true, email: true } } } },
+          collaborators: { select: { userId: true } },
+          _count: { select: { participants: true } },
+        },
+      });
+    }
     // Legacy URL compatibility: old bookmarks used ObjectIds as path segments.
     if (!data && /^[a-f0-9]{24}$/i.test(slug)) {
       const legacy = await prisma.quiz.findUnique({ where: { id: slug } });
@@ -87,6 +101,7 @@ export const getQuizBySlugDB = async ({ slug }: { slug: string }) => {
           questions: { include: { options: true } },
           group: { select: { name: true, adminId: true, admin: { select: { id: true, name: true, email: true } } } },
           collaborators: { select: { userId: true } },
+          _count: { select: { participants: true } },
         } });
       }
     }
@@ -100,9 +115,15 @@ export const getQuizBySlugDB = async ({ slug }: { slug: string }) => {
         questions: { include: { options: true } },
         group: { select: { name: true, adminId: true, admin: { select: { id: true, name: true, email: true } } } },
         collaborators: { select: { userId: true } },
+        _count: { select: { participants: true } },
       } });
     }
-    return { ok: true, data: { ...data, mainAdminId: data.group.adminId, groupName: data.group.name,
+    const availability = evaluateQuizAvailability(data);
+    if (data.published && availability.status === "expired" && availability.expiredReason !== "unpublished") {
+      await prisma.quiz.update({ where: { id: data.id }, data: { published: false } });
+      data = { ...data, published: false };
+    }
+    return { ok: true, data: { ...data, participantCount: data._count?.participants ?? 0, mainAdminId: data.group.adminId, groupName: data.group.name,
       isMainAdmin: data.group.adminId === userId, isCollaborator: data.collaborators.some((c) => c.userId === userId),
       legacyRedirectSlug: slug !== data.slug ? data.slug : undefined } };
   } catch (error) {
@@ -126,13 +147,119 @@ export const getQuizSlugByIdDB = async ({ id }: { id: string }) => {
   }
 };
 
+export const updateQuizAvailabilityDB = async ({
+  quizId,
+  mode,
+  durationMinutes,
+  startsAt,
+  endsAt,
+}: {
+  quizId: string;
+  mode: "ALWAYS" | "PUBLISH_TIMER" | "MANUAL_TIMER" | "FIXED_WINDOW";
+  durationMinutes?: number | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+}) => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return { ok: false, error: "You must be signed in." };
+    if (!(await getAccessibleQuiz(quizId, userId))) return { ok: false, error: "Quiz not found or access denied." };
+
+    if (!["ALWAYS", "PUBLISH_TIMER", "MANUAL_TIMER", "FIXED_WINDOW"].includes(mode)) {
+      return { ok: false, error: "Choose a valid availability mode." };
+    }
+    const duration = durationMinutes == null || durationMinutes === 0 ? null : Number(durationMinutes);
+    if (mode === "PUBLISH_TIMER" && (!Number.isInteger(duration) || Number(duration) < 1 || Number(duration) > 10080)) {
+      return { ok: false, error: "Set an auto-close duration between 1 minute and 7 days." };
+    }
+    if (mode === "MANUAL_TIMER" && duration !== null && (!Number.isInteger(duration) || Number(duration) < 1 || Number(duration) > 10080)) {
+      return { ok: false, error: "Duration must be between 1 minute and 7 days, or leave it empty for manual closing." };
+    }
+
+    let scheduledStart: Date | null = null;
+    let scheduledEnd: Date | null = null;
+    if (mode === "FIXED_WINDOW") {
+      scheduledStart = startsAt ? new Date(startsAt) : null;
+      scheduledEnd = endsAt ? new Date(endsAt) : null;
+      if (!scheduledStart || !scheduledEnd || !Number.isFinite(scheduledStart.getTime()) || !Number.isFinite(scheduledEnd.getTime())) {
+        return { ok: false, error: "Choose both a start and an end date/time." };
+      }
+      if (scheduledEnd.getTime() <= scheduledStart.getTime()) {
+        return { ok: false, error: "The end time must be after the start time." };
+      }
+      if (scheduledEnd.getTime() <= Date.now()) {
+        return { ok: false, error: "The end time must be in the future." };
+      }
+    }
+
+    const current = await prisma.quiz.findUnique({
+      where: { id: quizId },
+      select: { availabilityMode: true, availabilityStartedAt: true, published: true },
+    });
+    if (!current) return { ok: false, error: "Quiz not found." };
+
+    const now = new Date();
+    const availabilityStartedAt = mode === "MANUAL_TIMER"
+      ? (current.availabilityMode === mode ? current.availabilityStartedAt : null)
+      : mode === "PUBLISH_TIMER"
+        ? (current.availabilityMode === mode ? current.availabilityStartedAt : (current.published ? now : null))
+        : null;
+
+    const data = await prisma.quiz.update({
+      where: { id: quizId },
+      data: {
+        availabilityMode: mode,
+        availabilityDurationMinutes: mode === "PUBLISH_TIMER" || mode === "MANUAL_TIMER" ? duration : null,
+        availabilityStartedAt,
+        availabilityStartsAt: mode === "FIXED_WINDOW" ? scheduledStart : null,
+        availabilityEndsAt: mode === "FIXED_WINDOW" ? scheduledEnd : null,
+      },
+    });
+    return { ok: true, data };
+  } catch (error) {
+    return { ok: false, error: actionError(error) };
+  }
+};
+
+export const startQuizAvailabilityDB = async ({ quizId }: { quizId: string }) => {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return { ok: false, error: "You must be signed in." };
+    if (!(await getAccessibleQuiz(quizId, userId))) return { ok: false, error: "Quiz not found or access denied." };
+
+    const quiz = await prisma.quiz.findUnique({
+      where: { id: quizId },
+      select: { id: true, slug: true, published: true, availabilityMode: true, availabilityStartedAt: true },
+    });
+    if (!quiz) return { ok: false, error: "Quiz not found." };
+    if (!quiz.published) return { ok: false, error: "Publish the quiz before starting its shared timer." };
+    if (quiz.availabilityMode !== "MANUAL_TIMER") return { ok: false, error: "Switch availability to manual start first." };
+    if (quiz.availabilityStartedAt) return { ok: true, data: quiz, alreadyStarted: true };
+
+    const data = await prisma.quiz.update({ where: { id: quizId }, data: { availabilityStartedAt: new Date() } });
+    return { ok: true, data };
+  } catch (error) {
+    return { ok: false, error: actionError(error) };
+  }
+};
+
 export const publishQuizDB = async ({ quizId }: { quizId: string }) => {
   try {
     const userId = await getCurrentUserId();
     if (!userId) return { ok: false, error: "You must be signed in." };
     if (!(await getAccessibleQuiz(quizId, userId))) return { ok: false, error: "Quiz not found or access denied." };
 
-    const data = await prisma.quiz.update({ where: { id: quizId }, data: { published: true } });
+    const current = await prisma.quiz.findUnique({ where: { id: quizId }, select: { availabilityMode: true } });
+    if (!current) return { ok: false, error: "Quiz not found." };
+    const now = new Date();
+    const data = await prisma.quiz.update({
+      where: { id: quizId },
+      data: {
+        published: true,
+        publishedAt: now,
+        availabilityStartedAt: current.availabilityMode === "PUBLISH_TIMER" ? now : null,
+      },
+    });
     return { ok: true, data };
   } catch (error) {
     return { ok: false, error: actionError(error) };
@@ -145,7 +272,7 @@ export const unPublishQuizDB = async ({ quizId }: { quizId: string }) => {
     if (!userId) return { ok: false, error: "You must be signed in." };
     if (!(await getAccessibleQuiz(quizId, userId))) return { ok: false, error: "Quiz not found or access denied." };
 
-    const data = await prisma.quiz.update({ where: { id: quizId }, data: { published: false } });
+    const data = await prisma.quiz.update({ where: { id: quizId }, data: { published: false, publishedAt: null, availabilityStartedAt: null } });
     return { ok: true, data };
   } catch (error) {
     return { ok: false, error: actionError(error) };
@@ -307,6 +434,12 @@ export const updateQuizDB = async (
     const imageError = validateQuizImages(images);
     if (imageError) return { ok: false, error: imageError };
 
+    const existingQuiz = await prisma.quiz.findUnique({ where: { id: quizId }, select: { title: true, slug: true, previousSlugs: true } });
+    if (!existingQuiz) return { ok: false, error: "Quiz not found." };
+    const titleChanged = existingQuiz.title.trim() !== title;
+    const nextSlug = titleChanged ? await createUniqueQuizSlug(title, quizId) : existingQuiz.slug;
+    const previousSlugs = [...new Set([...(existingQuiz.previousSlugs ?? []), ...(titleChanged && existingQuiz.slug ? [existingQuiz.slug] : [])])].filter((value) => value !== nextSlug).slice(-20);
+
     const previousImages = await prisma.image.findMany({ where: { quizId }, select: { publicId: true, url: true } });
     // Preserve legacy cover images in this user's library before detaching them.
     // Deleting a quiz slot must not unexpectedly delete a reusable source asset.
@@ -327,13 +460,14 @@ export const updateQuizDB = async (
     if (images.some((image) => image.publicId && allowedImages.get(image.publicId) !== image.url)) {
       return { ok: false, error: "Choose images from your personal image library or keep images already attached to this quiz." };
     }
-    const retainedPublicIds = new Set(selectedPublicIds);
 
     const data = await prisma.$transaction(async (tx) => {
       const quiz = await tx.quiz.update({
         where: { id: quizId },
         data: {
           title,
+          ...(nextSlug ? { slug: nextSlug } : {}),
+          previousSlugs,
           desc: stringValue(values, "desc"),
           userInputs: [...new Set(userInputs.map((input) => input.trim()))],
           duration,
@@ -367,13 +501,9 @@ export const updateQuizDB = async (
       return tx.quiz.findUnique({ where: { id: quiz.id }, include: { images: true, questions: { include: { options: true } } } });
     });
 
-    const removedPublicIds = previousImages
-      .map((image) => image.publicId)
-      .filter((publicId) => !retainedPublicIds.has(publicId));
-    const cleanup = await deleteCloudinaryImages(removedPublicIds);
-    if (!cleanup.ok) console.error("Quiz updated, but Cloudinary cleanup failed:", cleanup.error);
-
-    return { ok: true, data, warning: cleanup.ok ? undefined : "Quiz saved, but an old cover image could not be deleted." };
+    // Detaching an image from a quiz is not the same as deleting it from the
+    // library. The library owns asset lifecycle, so keep unselected files there.
+    return { ok: true, data, warning: undefined };
   } catch (error) {
     const code = (error as { code?: string } | null)?.code;
     if (code === "P2002") return { ok: false, error: "A quiz with this title already exists in this group." };
@@ -396,9 +526,9 @@ export const deleteQuizDB = async ({ quizId }: { quizId: string }) => {
       });
     }
     const data = await prisma.quiz.delete({ where: { id: quizId } });
-    const cleanup = await deleteCloudinaryImages(images.map((image) => image.publicId));
-    if (!cleanup.ok) console.error("Quiz deleted, but Cloudinary cleanup failed:", cleanup.error);
-    return { ok: true, data, warning: cleanup.ok ? undefined : "Quiz deleted, but an associated image could not be removed from storage." };
+    // Quiz deletion must never delete reused images from Cloudinary. We already
+    // ensured every attached image is retained in the owner's library above.
+    return { ok: true, data };
   } catch (error) {
     return { ok: false, error: actionError(error) };
   }

@@ -2,7 +2,16 @@
 
 import { getCurrentUserId } from "@/lib/authorization";
 import { prisma } from "@/lib/prisma";
-import { deleteCloudinaryImages } from "@/lib/cloudinary";
+import { slugifyGroupName } from "@/lib/group-slug";
+
+async function createUniqueGroupSlug(name: string): Promise<string> {
+  const base = slugifyGroupName(name);
+  for (let suffix = 1; suffix <= 40; suffix += 1) {
+    const candidate = suffix === 1 ? base : `${base.slice(0, 72 - String(suffix).length - 1)}-${suffix}`;
+    if (!(await prisma.group.findFirst({ where: { slug: candidate }, select: { id: true } }))) return candidate;
+  }
+  return `${base.slice(0, 56)}-${Date.now().toString(36)}`;
+}
 
 
 export const createGroupDB = async ({ name, desc = "" }: { name: string; desc?: string }) => {
@@ -13,7 +22,8 @@ export const createGroupDB = async ({ name, desc = "" }: { name: string; desc?: 
     const cleanDesc = desc.trim();
     if (!cleanName || cleanName.length > 80) return { ok: false, error: "Group name must be between 1 and 80 characters." };
     if (cleanDesc.length > 1000) return { ok: false, error: "Group description is too long." };
-    const data = await prisma.group.create({ data: { name: cleanName, desc: cleanDesc, adminId: userId } });
+    const slug = await createUniqueGroupSlug(cleanName);
+    const data = await prisma.group.create({ data: { slug, name: cleanName, desc: cleanDesc, adminId: userId } });
     return { ok: true, data };
   } catch (cause) {
     const code = (cause as { code?: string } | null)?.code;
@@ -35,9 +45,9 @@ export const deleteGroupDB = async ({ id }: { id: string }) => {
     if (!group) return { ok: false, error: "Group not found or access denied." };
 
     const images = group.quizzes.flatMap((quiz) => quiz.images);
-    const publicIds = images.map((image) => image.publicId);
-    // Removing the group must not destroy cover art that was never imported
-    // into the owner's personal image library (legacy quizzes).
+    // Group deletion cascades quiz records, but cover art is reusable personal
+    // library content. Preserve it in the owner's library and never delete the
+    // underlying Cloudinary asset as a side effect of deleting a group.
     for (const image of images) {
       await prisma.userImage.upsert({
         where: { userId_publicId: { userId, publicId: image.publicId } },
@@ -46,13 +56,7 @@ export const deleteGroupDB = async ({ id }: { id: string }) => {
       });
     }
     const data = await prisma.group.delete({ where: { id } });
-    const cleanup = await deleteCloudinaryImages(publicIds);
-    if (!cleanup.ok) console.error("Group deleted, but Cloudinary cleanup failed:", cleanup.error);
-    return {
-      ok: true,
-      data,
-      warning: cleanup.ok ? undefined : "Group deleted, but one or more associated images could not be removed from storage.",
-    };
+    return { ok: true, data };
   } catch (error) {
     console.error("Delete group failed:", error);
     return { ok: false, error: "Could not delete this group. Please try again." };

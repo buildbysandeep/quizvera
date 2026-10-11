@@ -19,9 +19,18 @@ enum Role {
   SUPERADMIN
 }
 
+enum QuizAvailabilityMode {
+  ALWAYS
+  PUBLISH_TIMER
+  MANUAL_TIMER
+  FIXED_WINDOW
+}
+
 model User {
   id           String  @id @default(auto()) @map("_id") @db.ObjectId
   name         String?
+  image        String?
+  imagePublicId String?
   email        String  @unique
   phone        String?
   passwordHash String?
@@ -44,7 +53,8 @@ model User {
 }
 
 model Group {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  id   String  @id @default(auto()) @map("_id") @db.ObjectId
+  slug String? @unique
   name String
   desc String
 
@@ -114,6 +124,7 @@ model Quiz {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
   // Optional during migration; new quizzes always receive a stable URL slug.
   slug       String?  @unique
+  previousSlugs String[] @default([])
   title      String
   desc       String?
   duration   Int?
@@ -142,6 +153,15 @@ model Quiz {
 
   createdAt DateTime @default(now())
   published Boolean  @default(false)
+  publishedAt DateTime?
+
+  // Shared availability affects every participant. This is separate from
+  // `duration`, which remains the per-participant attempt timer.
+  availabilityMode             QuizAvailabilityMode @default(ALWAYS)
+  availabilityDurationMinutes  Int?
+  availabilityStartedAt        DateTime?
+  availabilityStartsAt         DateTime?
+  availabilityEndsAt           DateTime?
 
   @@unique([groupId, title])
   @@index([groupId, createdAt])

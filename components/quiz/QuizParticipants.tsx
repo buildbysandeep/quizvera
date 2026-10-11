@@ -19,6 +19,22 @@ import { successResultWithNote } from "@/lib/templates/success-result-with-note"
 import { rejectResultWithNote } from "@/lib/templates/rejectResult";
 import { CodeBlock } from "@/components/shared/CodeBlock";
 
+function submissionDayKey(value: Date | string) {
+  const date = new Date(value);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function submissionDayLabel(key: string) {
+  const [year, month, day] = key.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  const today = new Date();
+  const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+  const todayKey = submissionDayKey(today);
+  const yesterdayKey = submissionDayKey(yesterday);
+  const pretty = date.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  return key === todayKey ? `Today · ${pretty}` : key === yesterdayKey ? `Yesterday · ${pretty}` : pretty;
+}
+
 export default function QuizParticipantsHistory({ quizId, questions }: { quizId: string; questions: IQuestion[] }) {
   const [isLoading, setIsLoading] = useState(true);
   const [participants, setParticipants] = useState<IQuizParticipant[]>([]);
@@ -63,6 +79,14 @@ export default function QuizParticipantsHistory({ quizId, questions }: { quizId:
   const avgScore = correctCounts.length ? Math.round(correctCounts.reduce((sum, item) => sum + item, 0) / correctCounts.length) : 0;
   const qualifiedCount = participants.filter((participant) => participant.isQualified).length;
   const avgPercent = questions.length && participants.length ? Math.round((avgScore / questions.length) * 100) : 0;
+  const participantsByDay = new Map<string, IQuizParticipant[]>();
+  for (const participant of visibleParticipants) {
+    const key = submissionDayKey(participant.createdAt);
+    const entries = participantsByDay.get(key) ?? [];
+    entries.push(participant);
+    participantsByDay.set(key, entries);
+  }
+  const dayGroups = Array.from(participantsByDay.entries()).sort(([left], [right]) => right.localeCompare(left));
 
   return <div className="space-y-5">
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -75,7 +99,7 @@ export default function QuizParticipantsHistory({ quizId, questions }: { quizId:
       <div className="relative min-w-0 flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search participant name, email, or phone…" className="h-10 rounded-xl border-slate-200 pl-9 focus-visible:ring-indigo-500" aria-label="Search participants" /></div>
       <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">{([{value:"all",label:`All (${participants.length})`},{value:"qualified",label:`Qualified (${qualifiedCount})`},{value:"disqualified",label:`Disqualified (${participants.length-qualifiedCount})`}] as const).map((item) => <button key={item.value} type="button" aria-pressed={statusFilter === item.value} onClick={() => setStatusFilter(item.value)} className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${statusFilter === item.value ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}>{item.label}</button>)}</div>
     </div>
-    {isLoading ? <div className="flex min-h-40 items-center justify-center"><Loading /></div> : participants.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-14 text-center"><Users className="mx-auto h-7 w-7 text-slate-400" /><h3 className="mt-3 text-sm font-semibold text-slate-900">No submissions yet</h3><p className="mt-1 text-sm text-slate-500">Participants will appear here after they submit this quiz.</p></div> : visibleParticipants.length === 0 ? <div className="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">No participants match these filters.</div> : <QuizParticipants quizId={quizId} questions={questions} participants={visibleParticipants} date="All submissions" cb={() => undefined} onDelete={onDelete} />}
+    {isLoading ? <div className="flex min-h-40 items-center justify-center"><Loading /></div> : participants.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-14 text-center"><Users className="mx-auto h-7 w-7 text-slate-400" /><h3 className="mt-3 text-sm font-semibold text-slate-900">No submissions yet</h3><p className="mt-1 text-sm text-slate-500">Participants will appear here after they submit this quiz.</p></div> : visibleParticipants.length === 0 ? <div className="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">No participants match these filters.</div> : <div className="space-y-5">{dayGroups.map(([day, dayParticipants]) => { const times = dayParticipants.map((participant) => new Date(participant.createdAt).getTime()).filter(Number.isFinite); const earliest = times.length ? new Date(Math.min(...times)).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }) : ""; const latest = times.length ? new Date(Math.max(...times)).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }) : ""; return <section key={day} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-3 sm:px-5"><div className="flex min-w-0 items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-600"><CalendarDays className="h-5 w-5" /></span><div className="min-w-0"><h3 className="truncate text-sm font-semibold text-slate-900">{submissionDayLabel(day)}</h3><p className="mt-0.5 text-[11px] text-slate-500">Submissions between {earliest} and {latest}</p></div></div><span className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold tabular-nums text-slate-700">{dayParticipants.length} {dayParticipants.length === 1 ? "submission" : "submissions"}</span></header><div className="p-2 sm:p-3"><QuizParticipants quizId={quizId} questions={questions} participants={dayParticipants} date={submissionDayLabel(day)} cb={() => undefined} onDelete={onDelete} /></div></section>; })}</div>}
   </div>;
 }
 

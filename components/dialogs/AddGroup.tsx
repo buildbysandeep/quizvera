@@ -56,7 +56,7 @@ export default function AddGroup({ fullWidth = false }: AddGroupProps) {
       success(result.message || "Group created successfully");
       setOpen(false);
       resetForm();
-      router.push(`/group?id=${result.data.id}`);
+      router.push(`/group/${result.data.slug || result.data.id}`);
     } catch {
       setFormError("A network error occurred. Please try again.");
     } finally {

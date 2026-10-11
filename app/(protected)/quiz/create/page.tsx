@@ -180,7 +180,7 @@ const Page = ({ searchParams }: { searchParams: { group: string } }) => {
 
       setGroups(updatedGroups);
       success("Quiz created successfully");
-      router.push(`/group?id=${group.id}`);
+      router.push(`/group/${group.slug || group.id}`);
     } catch (caughtError) {
       const message = caughtError instanceof Error ? caughtError.message : "Something went wrong while creating the quiz";
       error(message, 1500);
@@ -205,7 +205,7 @@ const Page = ({ searchParams }: { searchParams: { group: string } }) => {
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="bg-gradient-to-br from-white via-white to-indigo-50/70 p-5 sm:p-7">
           <Link
-            href={`/group?id=${group.id}`}
+            href={`/group/${group.slug || group.id}`}
             className="mb-5 inline-flex items-center gap-2 text-xs font-medium text-slate-500 transition-colors hover:text-indigo-700"
           >
             <ArrowLeft className="h-3.5 w-3.5" />

@@ -56,6 +56,10 @@ export function UserRegistration({
     try {
       const result = await userRegDB({ name: cleanName, email: cleanEmail, phone: cleanPhone, quizId });
       if (!result.ok) {
+        if (result.redirectTo) {
+          router.replace(result.redirectTo);
+          return;
+        }
         setFormError(result.error || "Registration failed.");
         return;
       }

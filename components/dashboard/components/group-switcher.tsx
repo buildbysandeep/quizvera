@@ -19,7 +19,7 @@ export type GroupSwitcherProps = {
 export default function GroupSwitcher({ groups, value, onValueChange, className }: GroupSwitcherProps) {
   const [open, setOpen] = React.useState(false);
   const selectedGroup = groups.find((group) => group.id === value);
-  const selectedLabel = value === "all" ? "All groups" : (selectedGroup?.name ?? "Select group");
+  const selectedLabel = value === "all" ? "All folders" : (selectedGroup?.name ?? "Select folder");
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -29,7 +29,7 @@ export default function GroupSwitcher({ groups, value, onValueChange, className 
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          aria-label="Filter dashboard by group"
+          aria-label="Filter dashboard by folder"
           className={cn(
             "h-10 w-full justify-between gap-2 rounded-xl border-slate-200 bg-white px-3 text-sm font-medium shadow-sm sm:w-[220px]",
             className,
@@ -46,12 +46,12 @@ export default function GroupSwitcher({ groups, value, onValueChange, className 
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[260px] rounded-xl border-slate-200 p-0 shadow-lg">
         <Command>
-          <CommandInput placeholder="Search groups..." />
+          <CommandInput placeholder="Search folders..." />
           <CommandList>
-            <CommandEmpty>No groups found.</CommandEmpty>
-            <CommandGroup heading="Dashboard scope">
+            <CommandEmpty>No folders found.</CommandEmpty>
+            <CommandGroup heading="Folder scope">
               <CommandItem
-                value="All groups"
+                value="All folders"
                 onSelect={() => {
                   onValueChange("all");
                   setOpen(false);
@@ -59,7 +59,7 @@ export default function GroupSwitcher({ groups, value, onValueChange, className 
                 className="gap-2 py-2.5"
               >
                 <Layers3 className="h-4 w-4 text-slate-500" />
-                <span>All groups</span>
+                <span>All folders</span>
                 <CheckIcon className={cn("ml-auto h-4 w-4", value === "all" ? "opacity-100" : "opacity-0")} />
               </CommandItem>
               {groups.map((group) => (

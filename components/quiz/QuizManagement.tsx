@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { error, success } from "@/lib/utils";
-import { IOption, IQuestion, IQuiz, IQuizParticipant } from "@/types";
+import { IQuiz } from "@/types";
 import { getQuizBySlugDB } from "@/lib/actions/quiz.actions";
 import { Button } from "@/components/ui/button";
 import { Pencil1Icon } from "@radix-ui/react-icons";
@@ -12,8 +12,6 @@ import UserInputs from "@/app/(protected)/quiz/components/UserInputs";
 import QuizInfo from "@/app/(protected)/quiz/components/QuizInfo";
 import QuizDesc from "@/app/(protected)/quiz/components/QuizDesc";
 import QuizFooter from "@/app/(protected)/quiz/components/QuizFooter";
-import QuizQuestions from "@/app/(protected)/quiz/components/QuizQuestions";
-import AddQuestion from "@/components/dialogs/AddQuestion";
 import Link from "next/link";
 import DeleteQuiz from "@/components/dialogs/DeleteQuiz";
 import { PublishQuiz } from "@/components/dialogs/Share";
@@ -48,8 +46,8 @@ import { convertJsonToCsv, downloadFile } from "@/lib/download";
 import { SiGmail } from "react-icons/si";
 import { successResultWithNote } from "@/lib/templates/success-result-with-note";
 import { rejectResultWithNote } from "@/lib/templates/rejectResult";
-import GenerateQuestions from "@/components/dialogs/GenerateQuestions";
 import { CodeBlock } from "@/components/shared/CodeBlock";
+import QuizAvailabilitySettings from "@/components/quiz/QuizAvailabilitySettings";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -134,6 +132,14 @@ const Page = ({ params }: { params: { slug: string } }) => {
                   <ListChecks className="h-4 w-4 text-indigo-600" />
                   {data.maxMarks} total marks
                 </span>
+                <span className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600">
+                  <Users className="h-4 w-4 text-indigo-600" />
+                  {data.participantCount ?? 0} participants
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600">
+                  <CalendarDays className="h-4 w-4 text-indigo-600" />
+                  Created {new Date(data.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
+                </span>
                 {data.groupName ? <span className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600">Group: {data.groupName}</span> : null}
               </div>
             </div>
@@ -171,6 +177,8 @@ const Page = ({ params }: { params: { slug: string } }) => {
           </div>
         </div>
       </div>
+
+      <QuizAvailabilitySettings quiz={data} setData={setData} />
 
       {/* Quiz details */}
       <TabsContent value="details" className="mt-0 space-y-6">
@@ -252,75 +260,30 @@ const Page = ({ params }: { params: { slug: string } }) => {
             </section>
 
             {/* Question bank */}
-            <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex flex-col justify-between gap-4 border-b border-slate-200 bg-gradient-to-br from-white to-slate-50/80 p-5 sm:p-6 lg:flex-row lg:items-center">
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center sm:p-6">
                 <div className="flex items-start gap-3">
                   <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-indigo-50 ring-1 ring-indigo-100">
                     <ListChecks className="h-5 w-5 text-indigo-600" />
                   </div>
-
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-lg font-bold tracking-tight text-slate-900">Question bank</h2>
-
                       <span className="rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
                         {data.questions.length} {data.questions.length === 1 ? "question" : "questions"}
                       </span>
                     </div>
-
                     <p className="mt-1.5 max-w-lg text-xs leading-5 text-slate-500">
-                      Create questions, generate them with AI, and maintain the content of your assessment.
+                      Questions have their own workspace, keeping quiz settings and content editing separate.
                     </p>
                   </div>
                 </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <GenerateQuestions quizId={data.id} isTranslationEnabled={data.translationEnabled} />
-
-                  <AddQuestion
-                    quizId={data.id}
-                    data={data}
-                    setData={setData}
-                    translate={{
-                      enable: data.translationEnabled,
-                      source: data.sourceLanguage,
-                      target: data.targetLanguage,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="min-w-0 p-3 sm:p-5">
-                {data.questions.length > 0 ? (
-                  <QuizQuestions questions={data.questions} data={data} setData={setData} />
-                ) : (
-                  <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-5 py-12 text-center">
-                    <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-                      <FileQuestion className="h-6 w-6 text-indigo-600" />
-                    </div>
-
-                    <h3 className="mt-4 text-base font-semibold text-slate-900">No questions added yet</h3>
-
-                    <p className="mt-1.5 max-w-sm text-sm leading-6 text-slate-500">
-                      Start building your quiz by adding a question or generating questions automatically.
-                    </p>
-
-                    <div className="mt-5 flex flex-wrap justify-center gap-2">
-                      <GenerateQuestions quizId={data.id} isTranslationEnabled={data.translationEnabled} />
-
-                      <AddQuestion
-                        quizId={data.id}
-                        data={data}
-                        setData={setData}
-                        translate={{
-                          enable: data.translationEnabled,
-                          source: data.sourceLanguage,
-                          target: data.targetLanguage,
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
+                <Link
+                  href={`/quiz/${data.slug || params.slug}/questions`}
+                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+                >
+                  <ListChecks className="h-4 w-4" /> Manage question bank
+                </Link>
               </div>
             </section>
 

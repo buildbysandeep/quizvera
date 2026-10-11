@@ -44,11 +44,16 @@ export async function GET() {
       }
     }
 
-    const library = await prisma.userImage.findMany({
+    const storedLibrary = await prisma.userImage.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
       select: { id: true, publicId: true, url: true, createdAt: true },
     });
+    const currentUser = await prisma.user.findUnique({ where: { id: userId }, select: { image: true } });
+    const library = storedLibrary;
+    const profileReferences = library.length ? await prisma.user.findMany({ where: { image: { in: library.map((image) => image.url) } }, select: { image: true } }) : [];
+    const profileUsageByUrl = new Map<string, number>();
+    for (const reference of profileReferences) if (reference.image) profileUsageByUrl.set(reference.image, (profileUsageByUrl.get(reference.image) ?? 0) + 1);
     const publicIds = library.map((image) => image.publicId);
     const references = publicIds.length ? await prisma.image.findMany({
       where: { publicId: { in: publicIds } },
@@ -69,7 +74,10 @@ export async function GET() {
       quizIds.add(reference.quiz.id);
       usageByPublicId.set(reference.publicId, quizIds);
     }
-    const data = library.map((image) => ({ ...image, usageCount: usageByPublicId.get(image.publicId)?.size ?? 0, usedIn: visibleReferences.get(image.publicId) ?? [] }));
+    const data = library.map((image) => ({ ...image, usageCount: usageByPublicId.get(image.publicId)?.size ?? 0, profileUsageCount: profileUsageByUrl.get(image.url) ?? 0, usedIn: visibleReferences.get(image.publicId) ?? [] }))
+      // Profile-only uploads are stored separately. Hide legacy assets still
+      // referenced as a profile picture unless they are also used by a quiz.
+      .filter((image) => !(image.usageCount === 0 && ((currentUser?.image && image.url === currentUser.image) || image.profileUsageCount > 0)));
     return NextResponse.json({ ok: true, data }, { status: 200 });
   } catch (error) {
     console.error("GET /api/image failed:", error);
@@ -156,6 +164,8 @@ export async function DELETE(request: NextRequest) {
       where: { publicId: { in: publicIds } },
       select: { publicId: true, quizId: true },
     });
+    const profileReferences = await prisma.user.findMany({ where: { image: { in: owned.map((image) => image.url) } }, select: { image: true } });
+    const profileUrlsInUse = new Set(profileReferences.map((user) => user.image).filter((url): url is string => Boolean(url)));
     if (quizReferences.length) {
       const quizIdsByImage = new Map<string, Set<string>>();
       for (const reference of quizReferences) {
@@ -171,6 +181,10 @@ export async function DELETE(request: NextRequest) {
           inUse: blocked.map((publicId) => ({ publicId, count: quizIdsByImage.get(publicId)?.size ?? 0 })),
         }, { status: 409 });
       }
+    }
+    const profileBlocked = owned.filter((image) => profileUrlsInUse.has(image.url));
+    if (profileBlocked.length) {
+      return NextResponse.json({ ok: false, error: "This image is currently used as a profile picture. Change the profile picture before deleting the asset.", inUse: profileBlocked.map((image) => ({ publicId: image.publicId, profile: true })) }, { status: 409 });
     }
     await prisma.userImage.deleteMany({ where: { userId, publicId: { in: publicIds } } });
     // The Cloudinary helper skips any asset still referenced by a quiz or by

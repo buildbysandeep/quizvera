@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { createGuestIdentity, createQuizAttemptToken, verifyQuizAttemptToken } from "@/lib/quiz-attempt-token";
+import { evaluateQuizAvailability } from "@/lib/quiz-availability";
 
 type SubmittedAnswer = { questionId: string; answer: string };
 type SubmittedQuizInput = { key: string; value: string };
@@ -33,10 +34,24 @@ export const userRegDB = async ({
 
     const quiz = await prisma.quiz.findUnique({
       where: { id: quizId },
-      select: { id: true, published: true, groupId: true },
+      select: {
+        id: true, slug: true, published: true, groupId: true, createdAt: true, publishedAt: true,
+        availabilityMode: true, availabilityDurationMinutes: true, availabilityStartedAt: true,
+        availabilityStartsAt: true, availabilityEndsAt: true,
+      },
     });
     if (!quiz) return { ok: false, error: "This quiz is no longer available." };
-    if (!quiz.published) return { ok: false, error: "This quiz is not accepting submissions." };
+    const availability = evaluateQuizAvailability(quiz);
+    if (availability.status !== "active") {
+      if (availability.status === "expired" && quiz.published && availability.expiredReason !== "unpublished") {
+        await prisma.quiz.update({ where: { id: quiz.id }, data: { published: false } }).catch(() => undefined);
+      }
+      return {
+        ok: false,
+        error: availability.status === "waiting" ? "This quiz has not opened yet." : "This quiz is no longer accepting submissions.",
+        redirectTo: availability.status === "expired" ? `/share/quiz/${quiz.slug || quizId}/expired` : undefined,
+      };
+    }
 
     // Check both new snapshot identities and legacy participant rows.
     let existing = await prisma.quizParticipant.findFirst({
@@ -128,12 +143,37 @@ export const submitParticipantQuizDB = async ({
         published: true,
         duration: true,
         userInputs: true,
+        createdAt: true,
+        publishedAt: true,
+        availabilityMode: true,
+        availabilityDurationMinutes: true,
+        availabilityStartedAt: true,
+        availabilityStartsAt: true,
+        availabilityEndsAt: true,
         questions: { select: { id: true, options: { select: { key: true } } } },
       },
     });
 
     if (!quiz) return { ok: false, error: "Quiz not found." };
-    if (!quiz.published) return { ok: false, error: "This quiz is no longer accepting submissions.", redirectTo: `/share/quiz/${quiz.slug || quizId}/expired` };
+    const availability = evaluateQuizAvailability(quiz);
+    const sharedDeadline = availability.endAt ? new Date(availability.endAt).getTime() : null;
+    const sharedDeadlineGrace = Boolean(
+      availability.status === "expired" &&
+      (availability.expiredReason === "timer" || availability.expiredReason === "schedule") &&
+      sharedDeadline !== null &&
+      claims.iat < sharedDeadline &&
+      Date.now() <= sharedDeadline + 30_000,
+    );
+    if (availability.status !== "active" && !sharedDeadlineGrace) {
+      if (availability.status === "expired" && quiz.published && availability.expiredReason !== "unpublished") {
+        await prisma.quiz.update({ where: { id: quiz.id }, data: { published: false } }).catch(() => undefined);
+      }
+      return {
+        ok: false,
+        error: availability.status === "waiting" ? "The quiz has not started yet." : "This quiz is no longer accepting submissions.",
+        redirectTo: availability.status === "expired" ? `/share/quiz/${quiz.slug || quizId}/expired` : `/share/quiz/${quiz.slug || quizId}`,
+      };
+    }
     if (quiz.groupId !== groupId) return { ok: false, error: "Invalid quiz group." };
     if (!Array.isArray(answers) || !Array.isArray(quizInputs)) return { ok: false, error: "Invalid submission payload." };
     if (answers.length > quiz.questions.length || quizInputs.length > 20) return { ok: false, error: "Submission contains too much data." };
@@ -152,14 +192,15 @@ export const submitParticipantQuizDB = async ({
 
     // The client timer is only a convenience. Enforce the configured deadline
     // on the server too, with a short delivery grace for network latency.
-    const timedOut = Boolean(
+    const participantTimedOut = Boolean(
       isQualified &&
       !reason &&
       quiz.duration &&
       Date.now() > claims.iat + quiz.duration * 60_000 + 30_000,
     );
+    const timedOut = Boolean(participantTimedOut || sharedDeadlineGrace);
     const finalQualified = Boolean(isQualified && !reason && !timedOut);
-    const finalReason = reason?.trim() || (timedOut ? "Time limit exceeded" : null);
+    const finalReason = sharedDeadlineGrace ? "Quiz availability ended" : reason?.trim() || (timedOut ? "Time limit exceeded" : null);
 
     const questionById = new Map(quiz.questions.map((question) => [question.id, question]));
     const seenQuestionIds = new Set<string>();

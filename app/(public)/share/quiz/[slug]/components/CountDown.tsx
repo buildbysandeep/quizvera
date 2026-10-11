@@ -8,11 +8,14 @@ const CountDown = ({
   setOpenTimeOutDialog,
   setOpenTimeLeftDialog,
   user,
+  hideDisplay = false,
 }: {
   duration: number;
   setOpenTimeOutDialog: React.Dispatch<React.SetStateAction<boolean>>;
   setOpenTimeLeftDialog: React.Dispatch<React.SetStateAction<boolean>>;
   user: unknown;
+  /** Keep per-attempt timeout enforcement but hide its banner when the quiz has a shared deadline. */
+  hideDisplay?: boolean;
 }) => {
   const [timeLeft, setTimeLeft] = React.useState(Math.max(0, duration || 0));
   const notifiedTimeLeft = React.useRef(false);
@@ -46,6 +49,8 @@ const CountDown = ({
 
     return () => window.clearTimeout(timerId);
   }, [timeLeft, user, setOpenTimeOutDialog, setOpenTimeLeftDialog]);
+
+  if (hideDisplay) return null;
 
   const hours = Math.floor(timeLeft / 3600);
   const minutes = Math.floor((timeLeft % 3600) / 60);

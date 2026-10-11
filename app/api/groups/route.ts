@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { slugifyGroupName } from "@/lib/group-slug";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
@@ -14,6 +15,7 @@ export async function GET() {
       where: { adminId },
       select: {
         id: true,
+        slug: true,
         name: true,
 
         quizzes: {
@@ -61,8 +63,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Group description must be 500 characters or fewer." }, { status: 400 });
     }
 
+    const base = slugifyGroupName(name);
+    let slug = base;
+    let suffix = 2;
+    while (await prisma.group.findFirst({ where: { slug }, select: { id: true } })) {
+      slug = `${base.slice(0, 72 - String(suffix).length - 1)}-${suffix}`;
+      suffix += 1;
+    }
     const group = await prisma.group.create({
-      data: { name, desc: description, adminId },
+      data: { slug, name, desc: description, adminId },
     });
 
     return NextResponse.json({ ok: true, message: "Group created successfully", data: group }, { status: 201 });

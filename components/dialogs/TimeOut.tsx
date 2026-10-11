@@ -53,6 +53,10 @@ const TimeOut = ({ open, answers, quizInputs, quizId, groupId, userId, attemptTo
           reason: "Time limit exceeded",
         });
         if (!result.ok) {
+          if (result.redirectTo) {
+            router.replace(result.redirectTo);
+            return;
+          }
           setSaveFailed(true);
           error(result.error || "Could not save the timed-out quiz.");
         }

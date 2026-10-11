@@ -7,6 +7,7 @@ export interface IUser {
 
 export interface IGroup {
   id: string;
+  slug?: string | null;
   name: string;
   desc: string;
   adminId: string;
@@ -34,6 +35,12 @@ export interface IQuiz {
   isMainAdmin?: boolean;
   isCollaborator?: boolean;
   published: boolean;
+  publishedAt?: Date | string | null;
+  availabilityMode?: "ALWAYS" | "PUBLISH_TIMER" | "MANUAL_TIMER" | "FIXED_WINDOW";
+  availabilityDurationMinutes?: number | null;
+  availabilityStartedAt?: Date | string | null;
+  availabilityStartsAt?: Date | string | null;
+  availabilityEndsAt?: Date | string | null;
 
   isStrictMode: boolean;
   translationEnabled: boolean;
@@ -44,6 +51,7 @@ export interface IQuiz {
   images?: IImage[];
   participants?: IQuizParticipant[];
   createdAt: Date;
+  participantCount?: number;
 }
 
 export interface IQuestion {

@@ -19,15 +19,19 @@ import TimeLeft from "@/components/dialogs/TimeLeft";
 import { Checkbox } from "@/components/ui/checkbox";
 import CountDown from "./components/CountDown";
 import { useWakeLock } from "@/hooks/useWakeLock";
-import { AlertTriangle, ArrowRight, CheckCircle2, FileWarning, ShieldCheck, Wifi } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, Clock3, FileWarning, ShieldCheck, Wifi } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QuizSubmit } from "@/components/dialogs/QuizSubmit";
+import SharedAvailabilityClock from "./components/SharedAvailabilityClock";
 
 const Page = ({ params }: { params: { slug: string } }) => {
   const router = useRouter();
   const [user, setUser] = React.useState<IUser | null>(null);
   const [attemptToken, setAttemptToken] = React.useState<string | null>(null);
-  const { data, isLoading, error: requestError } = useSWR(`/api/quiz/share/${params.slug}`, fetcher, fetcherOpt);
+  const { data, isLoading, error: requestError, mutate } = useSWR(`/api/quiz/share/${params.slug}`, fetcher, {
+    ...fetcherOpt,
+    revalidateOnFocus: true,
+  });
   const [answers, setAnswers] = React.useState<IParticipantQuizAnswer[]>([]);
   const [quizInputs, setQuizInputs] = React.useState<{ key: string; value: string }[]>([]);
   const [openTimeOutDialog, setOpenTimeOutDialog] = React.useState(false);
@@ -105,6 +109,12 @@ const Page = ({ params }: { params: { slug: string } }) => {
     }
   }, [data, params.slug, router]);
 
+  useEffect(() => {
+    if (!data?.ok || data?.quiz?.availability?.status !== "waiting") return;
+    const refresh = window.setInterval(() => { void mutate(); }, 3000);
+    return () => window.clearInterval(refresh);
+  }, [data?.ok, data?.quiz?.availability?.status, mutate]);
+
   if (isLoading) {
     return (
       <main className="mx-auto flex min-h-[70vh] w-full max-w-5xl flex-col items-center justify-center gap-4 px-4 py-16">
@@ -141,6 +151,27 @@ const Page = ({ params }: { params: { slug: string } }) => {
   }
 
   const quiz = data.quiz;
+  if (quiz.availability?.status === "waiting") {
+    const isManualWaiting = quiz.availability.waitingReason === "admin";
+    return (
+      <main className="mx-auto min-h-[80vh] w-full max-w-3xl px-4 py-10 sm:py-16">
+        {quiz.availability.startAt ? <SharedAvailabilityClock targetAt={quiz.availability.startAt} label="Quiz opens in" waiting /> : null}
+        <section className="mt-4 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-900/5">
+          <div className="border-b border-slate-100 bg-gradient-to-br from-white via-white to-indigo-50/80 p-6 sm:p-9">
+            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-indigo-100 text-indigo-700"><CalendarClock className="h-6 w-6" /></div>
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700">Published · Not open yet</span>
+            <h1 className="mt-4 break-words text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{quiz.title}</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{isManualWaiting ? "The quiz administrator has published the link. The assessment will begin when the administrator starts the shared timer." : "This assessment is scheduled to open. Keep this page open; it will update automatically when the quiz becomes available."}</p>
+          </div>
+          <div className="p-6 sm:p-9">
+            <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4"><Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" /><div><p className="text-sm font-semibold text-slate-900">You’re in the waiting room</p><p className="mt-1 text-xs leading-5 text-slate-500">Questions are hidden until the quiz opens. This prevents participants from viewing assessment content early.</p></div></div>
+            <div className="mt-5 flex items-center justify-between gap-3"><p className="text-xs text-slate-400">Status refreshes automatically every few seconds.</p><Button type="button" variant="outline" className="rounded-xl" onClick={() => void mutate()}>Check now</Button></div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   const totalQuestions = quiz.questions?.length ?? 0;
   const attemptedQuestions = answers.length;
 
@@ -160,9 +191,21 @@ const Page = ({ params }: { params: { slug: string } }) => {
       <CountDown
         duration={Number(quiz.duration ?? 0) * 60}
         user={user}
+        hideDisplay={Boolean(quiz.availability?.endAt)}
         setOpenTimeOutDialog={setOpenTimeOutDialog}
         setOpenTimeLeftDialog={setOpenTimeLeftDialog}
       />
+
+      {quiz.availability?.endAt ? (
+        <SharedAvailabilityClock
+          targetAt={quiz.availability.endAt}
+          label="Quiz closes in"
+          onExpire={() => {
+            if (user && attemptToken) setOpenTimeOutDialog(true);
+            else router.replace(`/share/quiz/${quiz.slug || params.slug}/expired`);
+          }}
+        />
+      ) : null}
 
       <main className="mx-auto w-full max-w-5xl px-3 pt-4 sm:px-6 sm:pt-6">
         <QuizHeader title={quiz.title} images={quiz.images ?? []} />

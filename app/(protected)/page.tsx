@@ -39,11 +39,11 @@ const WelcomeScreen = ({ name }: { name: string | null | undefined }) => {
           </span>
 
           <h1 className="max-w-lg text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-            Welcome, {firstName}.<span className="mt-1 block text-indigo-600">Start with a group.</span>
+            Welcome, {firstName}.<span className="mt-1 block text-indigo-600">Start with a folder.</span>
           </h1>
 
           <p className="mt-4 max-w-lg text-sm leading-7 text-slate-600 sm:text-base">
-            Groups keep quizzes organized by class, subject, or project. Create your first group, then add quizzes and review
+            Folders keep quizzes organized by class, subject, or project. Create your first folder, then add quizzes and review
             participant results from one place.
           </p>
 
@@ -58,8 +58,8 @@ const WelcomeScreen = ({ name }: { name: string | null | undefined }) => {
                 <Layers3 className="h-4 w-4" />
               </span>
               <div>
-                <p className="text-xs font-semibold text-slate-800">Organize quizzes</p>
-                <p className="mt-1 text-[11px] leading-4 text-slate-500">Keep each set in its own group.</p>
+                <p className="text-xs font-semibold text-slate-800">Organize with folders</p>
+                <p className="mt-1 text-[11px] leading-4 text-slate-500">Keep each set in its own folder.</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -87,7 +87,7 @@ const WelcomeScreen = ({ name }: { name: string | null | undefined }) => {
               One workspace for every assessment.
             </h2>
             <p className="mt-3 max-w-xs text-sm leading-6 text-indigo-100/80">
-              Create a group first. Your quiz library will appear here once you add one.
+              Create a folder first. Your quiz library will appear here once you add one.
             </p>
           </div>
 
@@ -97,7 +97,7 @@ const WelcomeScreen = ({ name }: { name: string | null | undefined }) => {
                 <Layers3 className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">My first group</p>
+                <p className="text-sm font-semibold text-white">My first folder</p>
                 <p className="mt-1 text-xs text-indigo-100/70">Your quizzes will live here</p>
               </div>
               <ArrowRight className="ml-auto h-4 w-4 text-indigo-100" />
@@ -105,7 +105,7 @@ const WelcomeScreen = ({ name }: { name: string | null | undefined }) => {
             <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
               <div className="h-full w-1/3 rounded-full bg-indigo-300" />
             </div>
-            <p className="mt-2 text-[10px] text-indigo-100/60">Step 1 of 3 · Create a group</p>
+            <p className="mt-2 text-[10px] text-indigo-100/60">Step 1 of 3 · Create a folder</p>
           </div>
         </div>
       </div>

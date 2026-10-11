@@ -14,10 +14,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { error, success } from "@/lib/utils";
+import { useDataStore } from "@/stores/data";
+import { useSWRConfig } from "swr";
 import { deleteQuizDB } from "@/lib/actions/quiz.actions";
 
 const DeleteQuiz = ({ quizId, groupId }: { quizId: string; groupId: string }) => {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
+  const groups = useDataStore((state) => state.groups ?? []);
+  const setGroups = useDataStore((state) => state.setGroups);
   const [open, setOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
 
@@ -32,9 +37,13 @@ const DeleteQuiz = ({ quizId, groupId }: { quizId: string; groupId: string }) =>
         return;
       }
       setOpen(false);
+      setGroups(groups.map((group) => group.id === groupId ? { ...group, quizzes: (group.quizzes ?? []).filter((quiz) => quiz.id !== quizId) } : group));
+      await mutate("/api/groups");
       if (result.warning) error(result.warning);
       else success("Quiz deleted successfully");
-      router.replace(`/group?id=${groupId}`);
+      const targetGroup = groups.find((group) => group.id === groupId);
+      router.replace(targetGroup ? `/group/${targetGroup.slug || targetGroup.id}` : "/");
+      router.refresh();
     } catch {
       error("A network error occurred while deleting the quiz.");
     } finally {

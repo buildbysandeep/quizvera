@@ -122,5 +122,7 @@ export const formatDate = (value: Date) => {
     day: "numeric",
     month: "short",
     year: "numeric",
+    hour: "numeric",
+    minute: "numeric",
   });
 };

@@ -15,5 +15,5 @@ export default middlewareAuth((request) => {
 });
 
 export const config = {
-  matcher: ["/", "/group/:path*", "/quiz/:path*", "/my-quizes/:path*", "/shared-quizzes/:path*", "/image-library/:path*"],
+  matcher: ["/", "/group/:path*", "/quiz/:path*", "/my-quizes/:path*", "/shared-quizzes/:path*", "/image-library/:path*", "/profile/:path*"],
 };

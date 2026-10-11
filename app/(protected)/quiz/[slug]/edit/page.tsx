@@ -191,7 +191,7 @@ const EditQuizPage = ({ params }: PageProps) => {
 
       if (res.warning) error(res.warning);
       else success("Quiz updated successfully");
-      router.push(`/quiz/${data.slug}`);
+      router.push(`/quiz/${res.data?.slug || data.slug}`);
     } catch (err) {
       console.error("Quiz update failed:", err);
       error(err instanceof Error ? err.message : "Something went wrong while updating the quiz");

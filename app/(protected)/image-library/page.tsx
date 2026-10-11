@@ -16,6 +16,7 @@ type LibraryImage = {
   url: string;
   createdAt: string;
   usageCount: number;
+  profileUsageCount?: number;
   usedIn: { id: string; slug: string | null; title: string }[];
 };
 type Filter = "all" | "used" | "unused";
@@ -48,13 +49,14 @@ export default function ImageLibraryPage() {
 
   useEffect(() => { void refresh(); }, [refresh]);
 
-  const usedCount = images.filter((image) => image.usageCount > 0).length;
+  const isImageInUse = (image: LibraryImage) => image.usageCount > 0;
+  const usedCount = images.filter(isImageInUse).length;
   const unusedCount = images.length - usedCount;
   const normalizedQuery = query.trim().toLowerCase();
   const visibleImages = useMemo(() => images.filter((image) => {
     const matchesQuery = !normalizedQuery || image.publicId.toLowerCase().includes(normalizedQuery) ||
       image.usedIn.some((quiz) => quiz.title.toLowerCase().includes(normalizedQuery));
-    const matchesFilter = filter === "all" || (filter === "used" ? image.usageCount > 0 : image.usageCount === 0);
+    const matchesFilter = filter === "all" || (filter === "used" ? isImageInUse(image) : !isImageInUse(image));
     return matchesQuery && matchesFilter;
   }), [images, normalizedQuery, filter]);
 
@@ -86,7 +88,7 @@ export default function ImageLibraryPage() {
 
   const handleDelete = async () => {
     const image = deleteCandidate;
-    if (!image || image.usageCount > 0 || deleting) return;
+    if (!image || isImageInUse(image) || deleting) return;
     setDeleting(image.publicId);
     try {
       const params = new URLSearchParams({ public_ids: image.publicId });
@@ -123,10 +125,10 @@ export default function ImageLibraryPage() {
 
     {isLoading ? <div className="flex min-h-48 items-center justify-center"><Loading /></div> : visibleImages.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-14 text-center"><ImageIcon className="mx-auto h-8 w-8 text-slate-400" /><h2 className="mt-3 text-base font-semibold text-slate-900">{images.length ? "No images match this filter" : "Your library is empty"}</h2><p className="mt-1 text-sm text-slate-500">{images.length ? "Try another search or status filter." : "Upload an image once and reuse it across all your quizzes."}</p></div> : <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {visibleImages.map((image) => <article key={image.publicId} className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-indigo-200 hover:shadow-md">
-        <div className="relative bg-slate-50 p-3"><div className="relative aspect-[2/1] w-full"><Image src={image.url} alt="Quiz library image" fill sizes="(max-width: 768px) 100vw, 420px" unoptimized className="object-contain" /></div><span className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${image.usageCount > 0 ? "border-indigo-200 bg-white/95 text-indigo-700" : "border-emerald-200 bg-white/95 text-emerald-700"}`}>{image.usageCount > 0 ? <ShieldCheck className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}{image.usageCount} {image.usageCount === 1 ? "quiz" : "quizzes"}</span></div>
+        <div className="relative bg-slate-50 p-3"><div className="relative aspect-[2/1] w-full"><Image src={image.url} alt="Quiz library image" fill sizes="(max-width: 768px) 100vw, 420px" unoptimized className="object-contain" /></div><span className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold ${isImageInUse(image) ? "border-indigo-200 bg-white/95 text-indigo-700" : "border-emerald-200 bg-white/95 text-emerald-700"}`}>{isImageInUse(image) ? <ShieldCheck className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}{image.usageCount} {image.usageCount === 1 ? "quiz" : "quizzes"}</span></div>
         <div className="flex flex-1 flex-col p-4"><p className="break-all text-xs font-semibold text-slate-800">{image.publicId.split("/").slice(-1)[0]}</p><p className="mt-1 text-[11px] text-slate-400">Added {new Date(image.createdAt).toLocaleDateString()}</p>
-          <div className="mt-3 flex-1 space-y-2">{image.usageCount > 0 ? <><p className="text-xs font-semibold text-slate-700">Used in</p>{image.usedIn.length ? <div className="space-y-1.5">{image.usedIn.map((quiz) => <Link key={`${quiz.id}-${quiz.slug}`} href={quiz.slug ? `/quiz/${quiz.slug}` : `/quiz/${quiz.id}`} className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"><span className="truncate">{quiz.title}</span><ExternalLink className="h-3 w-3 shrink-0" /></Link>)}</div> : <p className="text-xs text-slate-500">Referenced by {image.usageCount} {image.usageCount === 1 ? "quiz" : "quizzes"} you may not have direct access to.</p>}<p className="flex items-start gap-1.5 text-[11px] leading-5 text-amber-700"><AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" /> This image cannot be deleted while any quiz still references it.</p></> : <p className="flex items-center gap-1.5 text-xs text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" /> Not attached to any quiz. Safe to delete.</p>}</div>
-          <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3"><span className="text-[10px] text-slate-400">{image.usageCount > 0 ? "In use · reusable" : "Unused asset"}</span><Button type="button" variant="outline" size="sm" disabled={image.usageCount > 0 || deleting === image.publicId} onClick={() => setDeleteCandidate(image)} title={image.usageCount > 0 ? "Remove this image from its quizzes before deleting it" : "Permanently delete unused image"} className="gap-1.5 rounded-lg border-rose-200 text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-45">{deleting === image.publicId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : image.usageCount > 0 ? <XCircle className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}{image.usageCount > 0 ? "In use" : "Delete"}</Button></div>
+          <div className="mt-3 flex-1 space-y-2">{isImageInUse(image) ? <>{image.usageCount > 0 ? <><p className="text-xs font-semibold text-slate-700">Used in quizzes</p>{image.usedIn.length ? <div className="space-y-1.5">{image.usedIn.map((quiz) => <Link key={`${quiz.id}-${quiz.slug}`} href={quiz.slug ? `/quiz/${quiz.slug}` : `/quiz/${quiz.id}`} className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"><span className="truncate">{quiz.title}</span><ExternalLink className="h-3 w-3 shrink-0" /></Link>)}</div> : <p className="text-xs text-slate-500">Referenced by {image.usageCount} {image.usageCount === 1 ? "quiz" : "quizzes"} you may not have direct access to.</p>}</> : null}<p className="flex items-start gap-1.5 text-[11px] leading-5 text-amber-700"><AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" /> This image cannot be deleted while any quiz references it.</p></> : <p className="flex items-center gap-1.5 text-xs text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" /> Not attached to any quiz. Safe to delete.</p>}</div>
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3"><span className="text-[10px] text-slate-400">{isImageInUse(image) ? "In use · reusable" : "Unused asset"}</span><Button type="button" variant="outline" size="sm" disabled={isImageInUse(image) || deleting === image.publicId} onClick={() => setDeleteCandidate(image)} title={isImageInUse(image) ? "Detach from quizzes or change the profile picture before deleting" : "Permanently delete unused image"} className="gap-1.5 rounded-lg border-rose-200 text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-45">{deleting === image.publicId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : isImageInUse(image) ? <XCircle className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}{isImageInUse(image) ? "In use" : "Delete"}</Button></div>
         </div>
       </article>)}
     </section>}
@@ -137,8 +139,8 @@ export default function ImageLibraryPage() {
           <DialogTitle>Delete this image permanently?</DialogTitle>
           <DialogDescription>This removes the image from your personal library. Quizvera blocks removal while any quiz references it. The Cloudinary asset is deleted only when no quiz or other personal library still references it.</DialogDescription>
         </DialogHeader>
-        {deleteCandidate ? <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3"><div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-white"><Image src={deleteCandidate.url} alt="Image selected for deletion" fill sizes="96px" unoptimized className="object-contain" /></div><div className="min-w-0"><p className="break-all text-sm font-semibold text-slate-900">{deleteCandidate.publicId.split("/").slice(-1)[0]}</p><p className="mt-1 text-xs text-emerald-700">No quiz references detected</p></div></div> : null}
-        <DialogFooter className="gap-2 sm:gap-2"><Button type="button" variant="outline" onClick={() => setDeleteCandidate(null)} disabled={Boolean(deleting)} className="rounded-xl">Cancel</Button><Button type="button" variant="destructive" onClick={() => void handleDelete()} disabled={Boolean(deleting) || !deleteCandidate || Boolean(deleteCandidate?.usageCount)} className="rounded-xl">{deleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting…</> : <><Trash2 className="mr-2 h-4 w-4" /> Delete image</>}</Button></DialogFooter>
+        {deleteCandidate ? <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3"><div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-white"><Image src={deleteCandidate.url} alt="Image selected for deletion" fill sizes="96px" unoptimized className="object-contain" /></div><div className="min-w-0"><p className="break-all text-sm font-semibold text-slate-900">{deleteCandidate.publicId.split("/").slice(-1)[0]}</p><p className="mt-1 text-xs text-emerald-700">No quiz or profile references detected</p></div></div> : null}
+        <DialogFooter className="gap-2 sm:gap-2"><Button type="button" variant="outline" onClick={() => setDeleteCandidate(null)} disabled={Boolean(deleting)} className="rounded-xl">Cancel</Button><Button type="button" variant="destructive" onClick={() => void handleDelete()} disabled={Boolean(deleting) || !deleteCandidate || (deleteCandidate ? isImageInUse(deleteCandidate) : true)} className="rounded-xl">{deleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting…</> : <><Trash2 className="mr-2 h-4 w-4" /> Delete image</>}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   </main>;

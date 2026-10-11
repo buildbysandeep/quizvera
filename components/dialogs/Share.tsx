@@ -28,7 +28,7 @@ export function PublishQuiz({ id, slug, isPublished, setData }: { id: string; sl
       const result = await publishQuizDB({ quizId: id });
       if (!result.ok) { error(result.error || "Could not publish quiz."); return; }
       setPublished(true);
-      setData((current) => current ? { ...current, published: true } : null);
+      setData((current) => current ? { ...current, published: true, publishedAt: result.data.publishedAt, availabilityStartedAt: result.data.availabilityStartedAt } : null);
       success("Quiz published successfully");
       setOpen(true);
     } catch {
@@ -45,7 +45,7 @@ export function PublishQuiz({ id, slug, isPublished, setData }: { id: string; sl
       const result = await unPublishQuizDB({ quizId: id });
       if (!result.ok) { error(result.error || "Could not unpublish quiz."); return; }
       setPublished(false);
-      setData((current) => current ? { ...current, published: false } : null);
+      setData((current) => current ? { ...current, published: false, publishedAt: null, availabilityStartedAt: null } : null);
       setCopied(false);
       success("Quiz unpublished successfully");
       setOpen(false);

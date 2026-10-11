@@ -3,7 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import type { JWT } from "next-auth/jwt";
 import { authConfig } from "./auth.config";
-import { handleCredentialsSignIn, handleFindUser, handleGoogleSignIn } from "./lib/auth.helpers";
+import { handleCredentialsSignIn, handleFindUser, handleFindUserById, handleGoogleSignIn } from "./lib/auth.helpers";
 
 export const authOptions: NextAuthConfig = {
   ...authConfig,
@@ -36,20 +36,34 @@ export const authOptions: NextAuthConfig = {
       if (account?.provider === "google") return handleGoogleSignIn({ profile });
       return true;
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }) {
       if (account?.provider === "google" && token.email) {
         const dbUser = await handleFindUser({ email: token.email });
         if (dbUser) {
           token.id = dbUser.id;
           token.isOnBoarded = dbUser.isOnBoarded;
           token.role = dbUser.role;
+          token.name = dbUser.name;
+          token.picture = dbUser.image ?? undefined;
         }
       }
       if (user && account?.provider === "credentials") {
-        const currentUser = user as typeof user & { isOnBoarded?: boolean; role?: string[] };
+        const currentUser = user as typeof user & { isOnBoarded?: boolean; role?: string[]; image?: string | null };
         token.id = currentUser.id;
         token.isOnBoarded = Boolean(currentUser.isOnBoarded);
         token.role = currentUser.role ?? [];
+        token.name = currentUser.name;
+        token.picture = currentUser.image ?? undefined;
+      }
+      if (trigger === "update" && typeof token.id === "string") {
+        const currentUser = await handleFindUserById({ id: token.id });
+        if (currentUser) {
+          token.name = currentUser.name;
+          token.picture = currentUser.image ?? undefined;
+          token.email = currentUser.email;
+          token.role = currentUser.role;
+          token.isOnBoarded = currentUser.isOnBoarded;
+        }
       }
       return token as JWT;
     },
@@ -59,6 +73,8 @@ export const authOptions: NextAuthConfig = {
         user: {
           ...session.user,
           id: typeof token.id === "string" ? token.id : "",
+          name: typeof token.name === "string" ? token.name : session.user?.name,
+          image: typeof token.picture === "string" ? token.picture : null,
           isOnBoarded: Boolean(token.isOnBoarded),
           role: Array.isArray(token.role) ? token.role : [],
         },

@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import React from "react";
 import { error, success } from "@/lib/utils";
 import Link from "next/link";
-import { verifyAndResetPasswordDB } from "@/lib/actions/user.action";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff, KeyRound, LockKeyhole } from "lucide-react";
 
@@ -27,8 +26,13 @@ const ResetPasswordForm = ({ searchParams }: { searchParams: { token: string; em
     }
     setIsLoading(true);
     try {
-      const result = await verifyAndResetPasswordDB({ token, email, password });
-      if (!result.ok) {
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, email, password }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result?.ok) {
         error(result.error || "Unable to reset password.");
         return;
       }

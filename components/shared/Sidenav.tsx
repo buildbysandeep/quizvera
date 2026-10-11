@@ -8,6 +8,7 @@ import useSWR from "swr";
 import { fetcher, fetcherOpt, formatDate } from "@/lib/utils";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
+  BookOpenCheck,
   Check,
   ChevronDown,
   Circle,
@@ -64,6 +65,7 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
   }, [data, setGroups]);
 
   const isDashboardActive = pathname === "/";
+  const isMyQuizzesActive = pathname.startsWith("/my-quizes");
   const isGroupRoute = pathname.startsWith("/group");
   const isQuizRoute = pathname.startsWith("/quiz");
   const activeQuizId = isQuizRoute && pathname !== "/quiz/create" ? routeId : null;
@@ -122,14 +124,14 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
       >
         <Link
           href="/"
-          title="Quiz App dashboard"
-          aria-label="Quiz App dashboard"
+          title="Quizvera dashboard"
+          aria-label="Quizvera dashboard"
           className={`flex min-w-0 items-center gap-2 font-semibold text-slate-900 ${collapsed ? "justify-center" : ""}`}
         >
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-200">
             <SiPlatformdotsh className="h-[18px] w-[18px]" />
           </span>
-          {!collapsed && <span className="truncate text-sm tracking-tight">Quiz App</span>}
+          {!collapsed && <span className="truncate text-sm tracking-tight">Quizvera</span>}
         </Link>
 
         {onToggleCollapsed && (
@@ -164,6 +166,19 @@ const Sidenav = ({ collapsed = false, onToggleCollapsed }: SidenavProps) => {
           {!collapsed && <span className="flex-1">Dashboard</span>}
           {!collapsed && isDashboardActive && <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />}
           {collapsed && isDashboardActive && <span className="absolute -left-2 h-6 w-1 rounded-r-full bg-indigo-600" />}
+        </Link>
+        <Link
+          href="/my-quizes"
+          title={collapsed ? "My quizzes" : undefined}
+          aria-label="My quizzes"
+          className={`group relative mt-1 flex items-center rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+            collapsed ? "mx-auto h-11 w-11 justify-center" : "gap-3 px-3 py-2.5"
+          } ${isMyQuizzesActive ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"}`}
+        >
+          <BookOpenCheck className="h-[18px] w-[18px] shrink-0" />
+          {!collapsed && <span className="flex-1">My quizzes</span>}
+          {!collapsed && isMyQuizzesActive && <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />}
+          {collapsed && isMyQuizzesActive && <span className="absolute -left-2 h-6 w-1 rounded-r-full bg-indigo-600" />}
         </Link>
       </nav>
 

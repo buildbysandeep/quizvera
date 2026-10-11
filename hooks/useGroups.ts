@@ -1,23 +1,25 @@
+"use client";
+
+import { useEffect } from "react";
+import useSWR from "swr";
 import { fetcher, fetcherOpt } from "@/lib/utils";
 import { useDataStore } from "@/stores/data";
-import { IGroup } from "@/types";
-import { useEffect, useState } from "react";
-import useSWR from "swr";
+import type { IGroup } from "@/types";
 
 export const useGroups = () => {
-  const { groups, setGroups } = useDataStore();
-  const [error, setError] = useState(null);
-  const { data, isLoading } = useSWR(groups.length === 0 ? "/api/groups" : null, fetcher, fetcherOpt);
+  const groups = useDataStore((state) => state.groups ?? []);
+  const setGroups = useDataStore((state) => state.setGroups);
+  const { data, isLoading, error } = useSWR("/api/groups", fetcher, fetcherOpt);
 
   useEffect(() => {
-    if (data && !data?.ok) {
-      setError(data?.error || "Something went wrong");
+    if (data?.ok && Array.isArray(data.data)) {
+      setGroups(data.data as IGroup[]);
     }
-    if (data && data?.ok && data?.data && !groups.length) {
-      setGroups(data.data || []);
-    }
-  }, [data, isLoading]);
+  }, [data, setGroups]);
 
-  const fetchResult: IGroup[] = data?.data || [];
-  return { groups: groups.length ? groups : fetchResult, isLoading, error };
+  return {
+    groups: (groups.length ? groups : Array.isArray(data?.data) ? data.data : []) as IGroup[],
+    isLoading,
+    error: error ?? (data && !data.ok ? data.error || "Could not load groups." : null),
+  };
 };

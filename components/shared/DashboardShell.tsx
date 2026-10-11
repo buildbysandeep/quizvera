@@ -27,7 +27,7 @@ export default function DashboardShell({ children, session }: DashboardShellProp
       <div className="flex min-w-0 flex-col">
         <Header session={session} />
         <main className="flex min-w-0 flex-1 flex-col gap-4 xs:p-2 lg:gap-6 lg:p-4">
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider session={session}>{children}</AuthProvider>
         </main>
       </div>
     </div>

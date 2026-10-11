@@ -1,4 +1,5 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import puppeteer from "puppeteer";
 import puppeteerCore from "puppeteer-core";
 import chromium from "@sparticuz/chromium-min";
@@ -12,15 +13,23 @@ export async function POST(req: NextRequest) {
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | Awaited<ReturnType<typeof puppeteerCore.launch>> | undefined;
 
   try {
-    const { html } = await req.json();
-    if (!html) {
-      return new Response(JSON.stringify({ error: "HTML content is required" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
+    const contentLength = Number(req.headers.get("content-length") || 0);
+    if (contentLength > 3 * 1024 * 1024) {
+      return NextResponse.json({ ok: false, error: "PDF content is too large." }, { status: 413 });
+    }
+    const payload = await req.json().catch(() => null);
+    const html = typeof payload?.html === "string" ? payload.html : "";
+    if (!html.trim()) {
+      return NextResponse.json({ ok: false, error: "HTML content is required" }, { status: 400 });
+    }
+    if (html.length > 2 * 1024 * 1024) {
+      return NextResponse.json({ ok: false, error: "PDF content is too large." }, { status: 413 });
+    }
 
     const isVercel = !!process.env.VERCEL;
 
@@ -38,7 +47,20 @@ export async function POST(req: NextRequest) {
     }
 
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "domcontentloaded" });
+    page.setDefaultNavigationTimeout(15_000);
+    await page.setRequestInterception(true);
+    page.on("request", (request) => {
+      let allowed = false;
+      try {
+        const url = new URL(request.url());
+        allowed = url.protocol === "data:" || url.protocol === "blob:" || url.href === "about:blank" || url.origin === "https://cdn.tailwindcss.com";
+      } catch {
+        allowed = false;
+      }
+      if (allowed) void request.continue().catch(() => undefined);
+      else void request.abort("blockedbyclient").catch(() => undefined);
+    });
+    await page.setContent(html, { waitUntil: "domcontentloaded", timeout: 15_000 });
 
     const pdfBuffer = await page.pdf({
       format: "A4",
@@ -49,7 +71,9 @@ export async function POST(req: NextRequest) {
     return new Response(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": "attachment; filename=generated.pdf",
+        "Content-Disposition": "attachment; filename=quiz-result.pdf",
+        "Cache-Control": "private, no-store, max-age=0",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch (error) {

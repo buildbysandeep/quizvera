@@ -39,14 +39,14 @@ const GenerateQuestions = ({ quizId, isTranslationEnabled }: GenerateQuestionsPr
   const handleGenerate = async () => {
     if (!topic.trim()) { setFormError("Enter a topic."); return; }
     if (!difficulty) { setFormError("Select a difficulty level."); return; }
-    if (!Number.isInteger(numQuestions) || numQuestions < 1 || numQuestions > 50) { setFormError("Choose between 1 and 50 questions."); return; }
+    if (!Number.isInteger(numQuestions) || numQuestions < 1 || numQuestions > 20) { setFormError("Choose between 1 and 20 questions."); return; }
     setIsGenerating(true);
     setFormError("");
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: topic.trim(), difficulty, numQuestions, isTranslationEnabled }),
+        body: JSON.stringify({ quizId, topic: topic.trim(), difficulty, numQuestions, isTranslationEnabled }),
       });
       const result = await response.json();
       if (!response.ok || result?.error || !Array.isArray(result?.questions)) throw new Error(result?.error || "Failed to generate questions.");
@@ -122,7 +122,7 @@ const GenerateQuestions = ({ quizId, isTranslationEnabled }: GenerateQuestionsPr
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2"><Label htmlFor="generate-topic">Topic</Label><Input id="generate-topic" value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="e.g. Python generators, React hooks, HTML forms" disabled={isGenerating || isAdding} className="h-11 rounded-xl" /></div>
             <div className="space-y-2"><Label htmlFor="generate-difficulty">Difficulty</Label><Select value={difficulty} onValueChange={setDifficulty} disabled={isGenerating || isAdding}><SelectTrigger id="generate-difficulty" className="h-11 rounded-xl"><SelectValue placeholder="Choose difficulty" /></SelectTrigger><SelectContent><SelectItem value="easy">Easy</SelectItem><SelectItem value="medium">Medium</SelectItem><SelectItem value="hard">Hard</SelectItem></SelectContent></Select></div>
-            <div className="space-y-2"><Label htmlFor="generate-count">Number of questions</Label><Input id="generate-count" type="number" min={1} max={50} value={numQuestions} onChange={(event) => setNumQuestions(Number(event.target.value))} disabled={isGenerating || isAdding} className="h-11 rounded-xl" /></div>
+            <div className="space-y-2"><Label htmlFor="generate-count">Number of questions</Label><Input id="generate-count" type="number" min={1} max={20} value={numQuestions} onChange={(event) => setNumQuestions(Number(event.target.value))} disabled={isGenerating || isAdding} className="h-11 rounded-xl" /></div>
           </div>
 
           {!generated ? (

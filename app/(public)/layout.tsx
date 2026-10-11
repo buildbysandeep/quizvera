@@ -5,8 +5,8 @@ import "../globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: "Quiz App | Assessment",
-  description: "Complete your assessment and submit your responses.",
+  title: "Quizvera | Assessment",
+  description: "Read your assessment instructions, complete the quiz, and submit your responses.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

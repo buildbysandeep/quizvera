@@ -5,14 +5,13 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET() {
   try {
     const session = await auth();
-    if (!session) {
+    const adminId = session?.user?.id;
+    if (!adminId) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 
     const groups = await prisma.group.findMany({
-      where: {
-        adminId: session?.user?.id,
-      },
+      where: { adminId },
       select: {
         id: true,
         name: true,
@@ -21,6 +20,7 @@ export async function GET() {
           select: {
             id: true,
             title: true,
+            desc: true,
             published: true,
             createdAt: true,
 
@@ -45,22 +45,26 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    if (!session) {
+    const adminId = session?.user?.id;
+    if (!adminId) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { name, description } = body;
+    const body = await req.json().catch(() => null);
+    const name = typeof body?.name === "string" ? body.name.trim() : "";
+    const description = typeof body?.description === "string" ? body.description.trim() : "";
+    if (!name || name.length > 100) {
+      return NextResponse.json({ ok: false, error: "Group name must be between 1 and 100 characters." }, { status: 400 });
+    }
+    if (description.length > 500) {
+      return NextResponse.json({ ok: false, error: "Group description must be 500 characters or fewer." }, { status: 400 });
+    }
 
     const group = await prisma.group.create({
-      data: {
-        name,
-        desc: description,
-        adminId: session?.user?.id!,
-      },
+      data: { name, desc: description, adminId },
     });
 
-    return NextResponse.json({ ok: true, message: "Group created successfully", data: group }, { status: 200 });
+    return NextResponse.json({ ok: true, message: "Group created successfully", data: group }, { status: 201 });
   } catch (error: any) {
     if (error?.code === "P2002") {
       return NextResponse.json({ ok: false, error: "Group name already exists" }, { status: 400 });

@@ -131,6 +131,8 @@ type ParticipantScoreSource = {
   userId: string;
   createdAt: Date;
   isQualified: boolean;
+  participantName: string | null;
+  participantEmail: string | null;
   User: { name: string | null; email: string };
   Quiz: { id: string; title: string; _count: { questions: number } };
   Answers: { answer: string; questionId: string }[];
@@ -155,8 +157,8 @@ function scoreParticipant(participant: ParticipantScoreSource, answerKeyByQuesti
 
   return {
     id: participant.id,
-    name: participant.User.name ?? "Unknown participant",
-    email: participant.User.email,
+    name: participant.participantName ?? participant.User.name ?? "Unknown participant",
+    email: participant.participantEmail ?? participant.User.email,
     quizId: participant.Quiz.id,
     quizTitle: participant.Quiz.title,
     correctAnswers,
@@ -245,6 +247,8 @@ export async function GET(request: NextRequest) {
               userId: true,
               createdAt: true,
               isQualified: true,
+              participantName: true,
+              participantEmail: true,
               User: { select: { name: true, email: true } },
               Quiz: {
                 select: {
@@ -292,7 +296,10 @@ export async function GET(request: NextRequest) {
     const bestScoreByUser = new Map<string, { userId: string; score: ReturnType<typeof scoreParticipant> }>();
     for (const participant of participantsInRange) {
       const score = scoreParticipant(participant, answerKeyByQuestion);
-      const previous = bestScoreByUser.get(participant.userId);
+      // Guest user IDs are intentionally scoped per quiz; email identity is the
+      // cross-quiz key so the same student isn't listed multiple times.
+      const studentKey = (participant.participantEmail ?? participant.User.email).trim().toLowerCase();
+      const previous = bestScoreByUser.get(studentKey);
       const newer = previous && new Date(score.createdAt).getTime() > new Date(previous.score.createdAt).getTime();
       const isBetter =
         !previous ||
@@ -302,7 +309,7 @@ export async function GET(request: NextRequest) {
           score.correctAnswers === previous.score.correctAnswers &&
           Boolean(newer));
 
-      if (isBetter) bestScoreByUser.set(participant.userId, { userId: participant.userId, score });
+      if (isBetter) bestScoreByUser.set(studentKey, { userId: participant.userId, score });
     }
 
     const topScores = Array.from(bestScoreByUser.values())

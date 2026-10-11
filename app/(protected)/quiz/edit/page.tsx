@@ -50,7 +50,6 @@ const EditQuizPage = ({ searchParams }: PageProps) => {
   const [isSaving, setIsSaving] = useState(false);
   const [data, setData] = useState<IQuiz | null>(null);
   const [images, setImages] = useState<QuizImage[]>([]);
-  const [imagePublicId, setImagePublicId] = useState<string[]>([]);
   const [quizName, setQuizName] = useState("");
   const [inputs, setInputs] = useState<string[]>([]);
   const [formStatus, setFormStatus] = useState("");
@@ -189,22 +188,8 @@ const EditQuizPage = ({ searchParams }: PageProps) => {
         throw new Error(res.error || "Unable to update quiz");
       }
 
-      // Delete removed images only after the quiz update has succeeded.
-      if (imagePublicId.length > 0) {
-        try {
-          const deleteResponse = await fetch(`/api/image?public_ids=${imagePublicId.map(encodeURIComponent).join(",")}`, {
-            method: "DELETE",
-          });
-
-          if (!deleteResponse.ok) {
-            console.warn("Quiz updated, but one or more old images could not be deleted.");
-          }
-        } catch (deleteError) {
-          console.warn("Quiz updated, but deleting old images failed:", deleteError);
-        }
-      }
-
-      success("Quiz updated successfully");
+      if (res.warning) error(res.warning);
+      else success("Quiz updated successfully");
       router.push(`/quiz?id=${searchParams.id}`);
     } catch (err) {
       console.error("Quiz update failed:", err);
@@ -285,7 +270,7 @@ const EditQuizPage = ({ searchParams }: PageProps) => {
 
           <div className="grid grid-cols-1 items-center gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] sm:p-6">
             <div className="min-w-0">
-              <ImageUplaod type="left" setImages={setImages} images={images} setDeleteImage={setImagePublicId} edit />
+              <ImageUplaod type="left" setImages={setImages} images={images} edit />
             </div>
 
             <div className="min-w-0 rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-indigo-50/60 px-4 py-6 text-center sm:px-6">
@@ -299,7 +284,7 @@ const EditQuizPage = ({ searchParams }: PageProps) => {
             </div>
 
             <div className="min-w-0">
-              <ImageUplaod type="right" setImages={setImages} images={images} setDeleteImage={setImagePublicId} edit />
+              <ImageUplaod type="right" setImages={setImages} images={images} edit />
             </div>
           </div>
         </section>

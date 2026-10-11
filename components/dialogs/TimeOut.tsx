@@ -16,9 +16,10 @@ type TimeOutProps = {
   quizId: string;
   groupId: string;
   userId: string;
+  attemptToken: string;
 };
 
-const TimeOut = ({ open, answers, quizInputs, quizId, groupId, userId }: TimeOutProps) => {
+const TimeOut = ({ open, answers, quizInputs, quizId, groupId, userId, attemptToken }: TimeOutProps) => {
   const router = useRouter();
   const [isSaving, setIsSaving] = React.useState(false);
   const [saveFailed, setSaveFailed] = React.useState(false);
@@ -42,6 +43,7 @@ const TimeOut = ({ open, answers, quizInputs, quizId, groupId, userId }: TimeOut
         const payload = payloadRef.current;
         const result = await submitParticipantQuizDB({
           userId,
+          attemptToken,
           quizId,
           groupId,
           answers: payload.answers,
@@ -61,7 +63,7 @@ const TimeOut = ({ open, answers, quizInputs, quizId, groupId, userId }: TimeOut
       }
     };
     void save();
-  }, [open, quizId, groupId, userId]);
+  }, [open, quizId, groupId, userId, attemptToken]);
 
   return (
     <Dialog open={open}>

@@ -143,7 +143,7 @@ const Page = ({ searchParams }: { searchParams: { id: string } }) => {
               </Link>
 
               <div className="flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 shadow-sm">
-                <DeleteQuiz quizId={data.id} images={data.images || []} groupId={data.groupId} />
+                <DeleteQuiz quizId={data.id} groupId={data.groupId} />
               </div>
             </div>
           </div>
@@ -408,32 +408,45 @@ const QuizHistory = ({ quizId, questions }: { quizId: string; questions: IQuesti
   const [participants, setParticipants] = useState<{ [key: string]: IQuizParticipant[] }>({});
 
   const handleUpdateParticipant = (date: string, id: string, key: string, value: string) => {
-    const participant = participants[date].find((participant) => participant.id === id);
+    const dayParticipants = participants[date] ?? [];
+    const participant = dayParticipants.find((participant) => participant.id === id);
     if (!participant) return;
     const newParticipant = { ...participant, [key]: value };
     const newParticipants = {
       ...participants,
-      [date]: [...participants[date].filter((participant) => participant.id !== id), newParticipant],
+      [date]: [...dayParticipants.filter((participant) => participant.id !== id), newParticipant],
     };
     setParticipants(newParticipants);
   };
 
   useEffect(() => {
+    let cancelled = false;
     const fetchData = async () => {
       setIsLoading(true);
-      const res = await getQuizParticipantsDB({ quizId });
-      setIsLoading(false);
-      if (!res.ok) return error(res.error!);
-      // @ts-ignore // set participants in date order
-      const participants = res?.data?.reduce((acc: { [key: string]: IQuizParticipant[] }, participant: IQuizParticipant) => {
-        const date = new Date(participant.createdAt).toDateString();
-        return { ...acc, [date]: [...(acc[date] || []), participant] };
-      }, {});
-      // @ts-ignore
-      setParticipants(participants);
+      try {
+        const res = await getQuizParticipantsDB({ quizId });
+        if (cancelled) return;
+        if (!res.ok) {
+          error(res.error || "Unable to load quiz participants.");
+          setParticipants({});
+          return;
+        }
+        const rows = (res.data ?? []) as IQuizParticipant[];
+        const grouped = rows.reduce((acc: { [key: string]: IQuizParticipant[] }, participant) => {
+          const date = new Date(participant.createdAt).toDateString();
+          (acc[date] ??= []).push(participant);
+          return acc;
+        }, {});
+        setParticipants(grouped);
+      } catch {
+        if (!cancelled) error("Unable to load quiz participants. Please try again.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
     };
-    fetchData();
-  }, []);
+    void fetchData();
+    return () => { cancelled = true; };
+  }, [quizId]);
 
   if (isLoading)
     return (
@@ -547,9 +560,10 @@ const QuizParticipants = ({
 
     const updatedParticipants = sortedData.map((participant: { id: string; answers: number }, index: number) => {
       const updatedParticipant = { ...shortedParticipants.find((p) => p.id === participant.id) };
-      updatedParticipant.percentile = (((sortedData.length - (index + 1)) / (shortedParticipants.length - 1)) * 100).toFixed(
-        2,
-      );
+      updatedParticipant.percentile = (sortedData.length <= 1
+        ? 100
+        : ((sortedData.length - (index + 1)) / (shortedParticipants.length - 1)) * 100
+      ).toFixed(2);
       return updatedParticipant;
     });
 
@@ -718,6 +732,16 @@ const Participant = ({
     try {
       const userInfoHtml = userInfoRef.current.innerHTML;
       const elementHtml = contentRef.current.innerHTML;
+      const escapedParticipantName = data.User.name.replace(/[&<>\"']/g, (character) => {
+        const entities: Record<string, string> = {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "\"": "&quot;",
+          "'": "&#39;",
+        };
+        return entities[character] || character;
+      });
 
       const htmlContent = `
       <html>
@@ -725,7 +749,7 @@ const Participant = ({
           <script src="https://cdn.tailwindcss.com"></script>
         </head>
         <body>
-          <h1 class="text-3xl mb-1">${data.User.name}</h1>
+          <h1 class="text-3xl mb-1">${escapedParticipantName}</h1>
           ${userInfoHtml}
           <h1 class="text-xl mt-5">Results</h1>
           ${elementHtml}

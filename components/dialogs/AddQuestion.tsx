@@ -91,7 +91,7 @@ const AddQuestion = ({ quizId, data, setData, translate }: AddQuestionProps) => 
       const response = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: title, o1: options[0].value, o2: options[1].value, o3: options[2].value, o4: options[3].value }),
+        body: JSON.stringify({ quizId, question: title, o1: options[0].value, o2: options[1].value, o3: options[2].value, o4: options[3].value }),
       });
       const result = await response.json();
       if (!response.ok || !result?.question || !Array.isArray(result.options)) throw new Error(result?.error || "Translation failed");

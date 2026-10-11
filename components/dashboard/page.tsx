@@ -164,7 +164,7 @@ export default function DashboardPage() {
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <GroupSwitcher groups={groupOptions} value={selectedGroupId} onValueChange={setSelectedGroupId} />
-          {/* <CalendarDateRangePicker value={dateRange} onChange={handleDateRangeChange} /> */}
+          <CalendarDateRangePicker value={dateRange} onChange={handleDateRangeChange} />
           <Button
             type="button"
             variant="outline"
@@ -196,66 +196,18 @@ export default function DashboardPage() {
 
       {/* Metric cards */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 xl:gap-4">
-        {/* <StatCard
-          title="Total groups"
-          value={formatNumber(stats.totalGroups)}
-          description="Groups in this dashboard scope"
-          icon={Layers3}
-          tone="indigo"
-        /> */}
-        <StatCard
-          title="Total quizzes"
-          value={formatNumber(stats.totalQuizzes)}
-          description={`${formatNumber(stats.publishedQuizzes)} published · ${formatNumber(stats.draftQuizzes)} drafts`}
-          icon={ClipboardList}
-          tone="violet"
-        />
-        <StatCard
-          title="Published quizzes"
-          value={formatNumber(stats.publishedQuizzes)}
-          description="Available to participants when shared"
-          icon={CheckCircle2}
-          tone="emerald"
-        />
-        {/* <StatCard
-          title="Draft quizzes"
-          value={formatNumber(stats.draftQuizzes)}
-          description="Not yet published"
-          icon={ListChecks}
-          tone="amber"
-        /> */}
-        {/* <StatCard
-          title="Total questions"
-          value={formatNumber(stats.totalQuestions)}
-          description="Questions across all quizzes in scope"
-          icon={ListChecks}
-          tone="slate"
-        /> */}
-        <StatCard
-          title="Total submissions"
-          value={formatNumber(stats.totalSubmissions)}
-          description="All-time quiz submissions"
-          icon={Users}
-          tone="indigo"
-        />
-        <StatCard
-          title="Qualified submissions"
-          value={formatNumber(stats.qualifiedSubmissions)}
-          description="Submissions marked qualified"
-          icon={ShieldCheck}
-          tone="emerald"
-        />
-        {/* <StatCard
-          title="Submissions in range"
-          value={formatNumber(stats.submissionsInRange)}
-          description="Within the selected date range"
-          icon={Activity}
-          tone="rose"
-        /> */}
+        <StatCard title="Total groups" value={formatNumber(stats.totalGroups)} description="Groups in this workspace" icon={Layers3} tone="indigo" />
+        <StatCard title="Total quizzes" value={formatNumber(stats.totalQuizzes)} description={`${formatNumber(stats.publishedQuizzes)} published · ${formatNumber(stats.draftQuizzes)} drafts`} icon={ClipboardList} tone="violet" />
+        <StatCard title="Published quizzes" value={formatNumber(stats.publishedQuizzes)} description="Available when shared" icon={CheckCircle2} tone="emerald" />
+        <StatCard title="Draft quizzes" value={formatNumber(stats.draftQuizzes)} description="Not yet published" icon={ListChecks} tone="amber" />
+        <StatCard title="Total questions" value={formatNumber(stats.totalQuestions)} description="Across quizzes in scope" icon={ListChecks} tone="slate" />
+        <StatCard title="Total submissions" value={formatNumber(stats.totalSubmissions)} description="All-time quiz submissions" icon={Users} tone="indigo" />
+        <StatCard title="Qualified submissions" value={formatNumber(stats.qualifiedSubmissions)} description="Submissions marked qualified" icon={ShieldCheck} tone="emerald" />
+        <StatCard title="Submissions in range" value={formatNumber(stats.submissionsInRange)} description="Within the selected dates" icon={Activity} tone="rose" />
       </section>
 
       {/* Activity chart */}
-      {/* <section>
+      <section>
         <Card className="min-w-0 overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
           <CardHeader className="border-b border-slate-100 px-5 py-5 sm:px-6">
             <div className="flex items-start justify-between gap-3">
@@ -274,7 +226,7 @@ export default function DashboardPage() {
             <Overview overview={overview} />
           </CardContent>
         </Card>
-      </section> */}
+      </section>
 
       {/* Recent submissions and leaderboard */}
       <section className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-2">

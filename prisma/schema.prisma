@@ -51,27 +51,37 @@ model Group {
 
   QuizParticipants QuizParticipant[]
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([adminId, name])
   @@map("groups")
 }
 
 model QuizParticipant {
-  id          String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String  @db.ObjectId
-  quizId      String  @db.ObjectId
-  groupId     String  @db.ObjectId
-  isQualified Boolean @default(false)
-  anyReason   String?
-  sentEmailId String?
-  User        User    @relation(fields: [userId], references: [id])
-  Quiz        Quiz    @relation(fields: [quizId], references: [id])
-  Group       Group   @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  id               String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String  @db.ObjectId
+  quizId           String  @db.ObjectId
+  groupId          String  @db.ObjectId
+  // Public quiz registrants are not authenticated user accounts. Preserve the
+  // submitted identity on the attempt rather than binding an email to User.
+  participantName  String?
+  participantEmail String?
+  participantPhone String?
+  isQualified      Boolean @default(false)
+  anyReason        String?
+  sentEmailId      String?
+  User             User    @relation(fields: [userId], references: [id])
+  Quiz             Quiz    @relation(fields: [quizId], references: [id])
+  Group            Group   @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   Answers    ParticipantQuizAnswer[]
   QuizInputs QuizInput[]
   createdAt  DateTime                @default(now())
 
   @@unique([userId, quizId])
+  @@index([quizId, participantEmail])
+  @@index([groupId, createdAt])
   @@map("quiz_participants")
 }
 
@@ -128,6 +138,7 @@ model Quiz {
   published Boolean  @default(false)
 
   @@unique([groupId, title])
+  @@index([groupId, createdAt])
   @@map("quizzes")
 }
 
@@ -146,6 +157,7 @@ model Question {
   participantQuizAnswers ParticipantQuizAnswer[]
 
   // @@unique([quizId, title])
+  @@index([quizId])
   @@map("questions")
 }
 

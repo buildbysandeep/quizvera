@@ -24,7 +24,8 @@ const DeleteGroup = ({ id }: { id: string }) => {
       if (!result.ok) { error(result.error || "Could not delete group."); return; }
       setGroups(groups.filter((group) => group.id !== id));
       setOpen(false);
-      success("Group deleted successfully");
+      if (result.warning) error(result.warning);
+      else success("Group deleted successfully");
       router.replace("/");
     } catch {
       error("A network error occurred while deleting the group.");

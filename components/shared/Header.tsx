@@ -43,7 +43,7 @@ const Header = ({ session }: { session: Session }) => {
                   <SiPlatformdotsh className="h-[18px] w-[18px]" />
                 </span>
                 <span>
-                  <SheetTitle className="text-sm font-bold tracking-tight text-slate-950">Quiz App</SheetTitle>
+                  <SheetTitle className="text-sm font-bold tracking-tight text-slate-950">Quizvera</SheetTitle>
                   <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-400">
                     Workspace
                   </span>

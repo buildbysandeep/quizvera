@@ -22,11 +22,13 @@ import { userRegDB } from "@/lib/actions/user.action";
 export function UserRegistration({
   visible,
   setUser,
+  setAttemptToken,
   quizId,
 }: {
   visible: boolean;
   quizId: string;
   setUser: React.Dispatch<React.SetStateAction<IUser | null>>;
+  setAttemptToken: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
@@ -63,13 +65,14 @@ export function UserRegistration({
         router.replace(`/share/quiz/disqualified?quizId=${quizId}`);
         return;
       }
-      if (result.data) {
+      if (result.data && result.attemptToken) {
         setUser({
           id: result.data.id,
           name: result.data.name || cleanName,
           email: result.data.email,
           phone: result.data.phone || cleanPhone,
         });
+        setAttemptToken(result.attemptToken);
         try {
           await enterFullScreen();
         } catch {
@@ -158,12 +161,13 @@ export function UserRegistration({
             </div>
             <p className="text-xs text-slate-500">{phone.length}/10 digits</p>
           </div>
-          {formError ||
-            (phone && phone.length !== 10 && (
-              <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                {formError || (phone && phone.length !== 10 && "Enter a valid 10-digit phone number")}
-              </p>
-            ))}
+          {formError ? (
+            <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+              {formError}
+            </p>
+          ) : phone && phone.length !== 10 ? (
+            <p role="status" className="text-xs text-rose-600">Enter a valid 10-digit phone number.</p>
+          ) : null}
           <DialogFooter>
             <Button
               type="submit"

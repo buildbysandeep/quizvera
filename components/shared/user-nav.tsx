@@ -18,6 +18,12 @@ import { LogOut, UserRound } from "lucide-react";
 export function UserNav({ session }: { session: Session }) {
   const name = session.user?.name?.trim() || "User";
   const email = session.user?.email || "";
+  const roles = (session.user as { role?: string[] } | undefined)?.role ?? [];
+  const accountLabel = roles.includes("SUPERADMIN")
+    ? "Super administrator"
+    : roles.includes("ADMIN")
+      ? "Administrator"
+      : "Workspace member";
   const initials =
     name
       .split(/\s+/)
@@ -40,7 +46,7 @@ export function UserNav({ session }: { session: Session }) {
           </Avatar>
           <span className="hidden max-w-36 text-left sm:block">
             <span className="block truncate text-xs font-semibold text-slate-800">{name}</span>
-            <span className="mt-0.5 block text-[10px] text-slate-500">Administrator</span>
+            <span className="mt-0.5 block text-[10px] text-slate-500">{accountLabel}</span>
           </span>
         </Button>
       </DropdownMenuTrigger>

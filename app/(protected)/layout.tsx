@@ -11,8 +11,8 @@ import React from "react";
 import DashboardShell from "@/components/shared/DashboardShell";
 
 export const metadata: Metadata = {
-  title: "Quiz App",
-  description: "Quiz App",
+  title: "Quizvera",
+  description: "Quizvera",
 };
 
 export default async function RootLayout({
@@ -21,7 +21,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
-  if (!session || !session.user) redirect("/sign-in");
+  if (!session?.user) redirect("/sign-in");
+  if (!session.user.isOnBoarded) redirect("/on-boarding");
 
   return (
     <html lang="en">

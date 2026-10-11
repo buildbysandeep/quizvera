@@ -26,6 +26,7 @@ import { QuizSubmit } from "@/components/dialogs/QuizSubmit";
 const Page = ({ params }: { params: { id: string } }) => {
   const router = useRouter();
   const [user, setUser] = React.useState<IUser | null>(null);
+  const [attemptToken, setAttemptToken] = React.useState<string | null>(null);
   const { data, isLoading, error: requestError } = useSWR(`/api/quiz/share/${params.id}`, fetcher, fetcherOpt);
   const [answers, setAnswers] = React.useState<IParticipantQuizAnswer[]>([]);
   const [quizInputs, setQuizInputs] = React.useState<{ key: string; value: string }[]>([]);
@@ -33,10 +34,11 @@ const Page = ({ params }: { params: { id: string } }) => {
   const [openTimeLeftDialog, setOpenTimeLeftDialog] = React.useState(false);
   const [isAgreementChecked, setIsAgreementChecked] = React.useState(false);
   const hasDisqualified = useRef(false);
+  const hasEnteredFullScreen = useRef(false);
 
   // Strict-mode enforcement. Avoid submitting twice when blur and fullscreen events occur together.
   useEffect(() => {
-    if (!data?.ok || !data?.quiz?.isStrictMode || !user) return;
+    if (!data?.ok || !data?.quiz?.isStrictMode || !user || !attemptToken) return;
 
     const disqualify = async (reason: string, destination: string) => {
       if (hasDisqualified.current) return;
@@ -44,6 +46,7 @@ const Page = ({ params }: { params: { id: string } }) => {
       try {
         await submitParticipantQuizDB({
           userId: user.id,
+          attemptToken,
           quizId: data.quiz.id,
           groupId: data.quiz.groupId,
           answers,
@@ -59,12 +62,17 @@ const Page = ({ params }: { params: { id: string } }) => {
     };
 
     const checkFullScreen = () => {
-      if (!document.fullscreenElement) {
+      if (document.fullscreenElement) {
+        hasEnteredFullScreen.current = true;
+        return;
+      }
+      if (hasEnteredFullScreen.current) {
         void disqualify("You have exited full-screen mode!", "/share/quiz/disqualified?exitFullScreen=true");
       }
     };
 
     const handleWindowBlur = () => {
+      if (!hasEnteredFullScreen.current) return;
       void disqualify(
         "You switched away from the quiz! Possible reason: Tried to switch tabs or minimize the browser.",
         "/share/quiz/disqualified?lostFocus=true",
@@ -80,7 +88,7 @@ const Page = ({ params }: { params: { id: string } }) => {
       document.removeEventListener("webkitfullscreenchange", checkFullScreen);
       window.removeEventListener("blur", handleWindowBlur);
     };
-  }, [data, user, answers, quizInputs, router]);
+  }, [data, user, attemptToken, answers, quizInputs, router]);
 
   useEffect(() => {
     if (data?.ok && data?.quiz && !data.quiz.published) {
@@ -139,6 +147,7 @@ const Page = ({ params }: { params: { id: string } }) => {
         quizId={quiz.id}
         groupId={quiz.groupId}
         userId={user?.id ?? ""}
+        attemptToken={attemptToken ?? ""}
       />
       <CountDown
         duration={Number(quiz.duration ?? 0) * 60}
@@ -181,6 +190,7 @@ const Page = ({ params }: { params: { id: string } }) => {
                     answers={answers}
                     quizId={quiz.id}
                     groupId={quiz.groupId}
+                    attemptToken={attemptToken ?? ""}
                   />
                 </div>
               </section>
@@ -258,7 +268,7 @@ const Page = ({ params }: { params: { id: string } }) => {
                     <p className="text-xs leading-5 text-slate-500">
                       You will be asked to register before the timer starts.
                     </p>
-                    <UserRegistration visible={isAgreementChecked} setUser={setUser} quizId={quiz.id} />
+                    <UserRegistration visible={isAgreementChecked} setUser={setUser} setAttemptToken={setAttemptToken} quizId={quiz.id} />
                   </div>
                 </div>
               </div>

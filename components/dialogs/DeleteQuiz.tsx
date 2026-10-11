@@ -15,9 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import { error, success } from "@/lib/utils";
 import { deleteQuizDB } from "@/lib/actions/quiz.actions";
-import { IImage } from "@/types";
 
-const DeleteQuiz = ({ quizId, images, groupId }: { quizId: string; images: IImage[]; groupId: string }) => {
+const DeleteQuiz = ({ quizId, groupId }: { quizId: string; groupId: string }) => {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
@@ -32,22 +31,10 @@ const DeleteQuiz = ({ quizId, images, groupId }: { quizId: string; images: IImag
         error(result.error || "Could not delete quiz.");
         return;
       }
-      if (images.length) {
-        const publicIds = images.map((image) => image.publicId).filter((publicId): publicId is string => Boolean(publicId));
-        if (publicIds.length) {
-          try {
-            const imageResponse = await fetch(`/api/image?public_ids=${publicIds.map(encodeURIComponent).join(",")}`, {
-              method: "DELETE",
-            });
-            if (!imageResponse.ok) console.error("Quiz deleted, but one or more hosted images could not be removed.");
-          } catch (imageError) {
-            console.error("Quiz deleted, but hosted image cleanup failed.", imageError);
-          }
-        }
-      }
       setOpen(false);
-      success("Quiz deleted successfully");
-      window.location.reload();
+      if (result.warning) error(result.warning);
+      else success("Quiz deleted successfully");
+      router.replace(`/group?id=${groupId}`);
     } catch {
       error("A network error occurred while deleting the quiz.");
     } finally {

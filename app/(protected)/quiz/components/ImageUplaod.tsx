@@ -15,14 +15,12 @@ const ImageUplaod = ({
   type,
   images,
   setImages,
-  setDeleteImage,
   edit = false,
 }: {
   type: string;
   edit?: boolean;
   images: IImage[];
   setImages: React.Dispatch<React.SetStateAction<IImage[]>>;
-  setDeleteImage?: React.Dispatch<React.SetStateAction<string[]>>;
 }) => {
   const image = images.find((img) => img.key === type);
   const inputId = `${type}-image-upload`;
@@ -52,11 +50,6 @@ const ImageUplaod = ({
     if (file.size > MAX_IMAGE_SIZE) {
       error("Image size should be less than 1MB");
       return;
-    }
-
-    // Queue an existing Cloudinary image for deletion only when the form saves.
-    if (image?.publicId && setDeleteImage) {
-      setDeleteImage((previous) => (previous.includes(image.publicId!) ? previous : [...previous, image.publicId!]));
     }
 
     // Revoke a previous local preview for this same image slot.

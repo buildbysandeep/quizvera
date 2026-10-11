@@ -3,10 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { findUserByEmailDB, saveResetTokenDB } from "@/lib/actions/user.action";
-import { generateResetPasswordToken, success, error } from "@/lib/utils";
+import { success, error } from "@/lib/utils";
 import React from "react";
-import { forgotPasswordTemplate } from "@/email_templates/forgot_password";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Mail, MailCheck } from "lucide-react";
 
@@ -20,39 +18,19 @@ const FotgotPasswordForm = () => {
     if (!email.trim()) return;
     setIsLoading(true);
     try {
-      const user = await findUserByEmailDB({ email: email.trim() });
-      if (!user.ok) {
-        error(user.error || "Unable to process this request.");
-        return;
-      }
-
-      const { token, hashToken } = generateResetPasswordToken();
-      const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email.trim())}`;
-      const template = forgotPasswordTemplate(resetUrl, process.env.SENDER_NAME || "Quizvera");
-
-      const response = await fetch("/api/email", {
+      const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: [{ name: "User", address: email.trim() }],
-          subject: "Password Reset",
-          body: { html: template },
-        }),
+        body: JSON.stringify({ email: email.trim() }),
       });
-      const res = await response.json();
-      if (!response.ok || !res?.data?.accepted?.includes(email.trim())) {
-        error("Failed to send reset email. Please try again later.");
-        return;
-      }
-
-      const saved = await saveResetTokenDB({ email: email.trim(), token: hashToken });
-      if (!saved.ok) {
-        error(saved.error || "Unable to save reset request.");
+      const result = await response.json();
+      if (!response.ok || !result?.ok) {
+        error(result?.error || "Unable to process this request. Please try again.");
         return;
       }
 
       setSent(true);
-      success("Reset email sent. Check your inbox.");
+      success(result.message || "If an account exists, reset instructions will be sent shortly.");
     } catch {
       error("Something went wrong. Please try again.");
     } finally {

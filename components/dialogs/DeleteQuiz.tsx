@@ -43,7 +43,7 @@ const DeleteQuiz = ({ quizId, groupId }: { quizId: string; groupId: string }) =>
         ),
       );
       await mutate("/api/groups");
-      if (result.warning) error(result.warning);
+      if ("warning" in result && typeof result.warning === "string" && result.warning) error(result.warning);
       else success("Quiz deleted successfully");
       const targetGroup = groups.find((group) => group.id === groupId);
       router.replace(targetGroup ? `/group/${targetGroup.slug || targetGroup.id}` : "/");

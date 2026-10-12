@@ -203,7 +203,7 @@ export default function MyQuizzesPage() {
                     </span>
                   ) : null}
                 </div>
-                <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3 mt-4">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
                   <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-500">
                     <CalendarDays className="h-3.5 w-3.5" />
                     {new Date(quiz.participatedAt).toLocaleDateString()}

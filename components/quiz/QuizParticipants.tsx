@@ -68,6 +68,7 @@ export default function QuizParticipantsHistory({ quizId, questions }: { quizId:
     try {
       const response = await getQuizParticipantsDB({ quizId });
       if (!response.ok) throw new Error(response.error || "Unable to load participants.");
+      // @ts-ignore
       setParticipants((response.data ?? []) as IQuizParticipant[]);
     } catch (cause) {
       error(cause instanceof Error ? cause.message : "Unable to load participants.");

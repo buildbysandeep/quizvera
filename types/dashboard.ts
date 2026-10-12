@@ -26,6 +26,7 @@ export type DashboardScore = {
   email: string;
   quizId: string;
   quizTitle: string;
+  quizSlug: string;
   correctAnswers: number;
   answeredQuestions: number;
   unansweredQuestions: number;

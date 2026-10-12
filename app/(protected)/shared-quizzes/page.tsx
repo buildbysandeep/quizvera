@@ -115,7 +115,7 @@ export default function SharedQuizzesPage() {
                 {quiz._count.participants} participants
               </p>
             </div>
-            <div className="mt-auto flex gap-2 border-t border-slate-100 pt-4 mt-5">
+            <div className="mt-5 flex gap-2 border-t border-slate-100 pt-4">
               <Button asChild className="flex-1 rounded-xl bg-indigo-600 hover:bg-indigo-700">
                 <Link href={`/quiz/${quiz.slug || quiz.id}`}>Open quiz</Link>
               </Button>

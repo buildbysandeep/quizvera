@@ -35,7 +35,7 @@ const DeleteGroup = ({ id }: { id: string }) => {
       }
       setGroups(groups.filter((group) => group.id !== id));
       setOpen(false);
-      if (result.warning) error(result.warning);
+      if ("warning" in result && typeof result.warning === "string" && result.warning) error(result.warning);
       else success("Folder deleted successfully");
       router.replace("/");
     } catch {

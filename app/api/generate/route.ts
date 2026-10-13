@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
     if (!["easy", "medium", "hard"].includes(difficulty)) {
       return NextResponse.json({ ok: false, error: "Select a valid difficulty level." }, { status: 400 });
     }
-    if (!Number.isInteger(numQuestions) || numQuestions < 1 || numQuestions > 20) {
-      return NextResponse.json({ ok: false, error: "Generate between 1 and 20 questions per request." }, { status: 400 });
-    }
+    // if (!Number.isInteger(numQuestions) || numQuestions < 1 || numQuestions > 20) {
+    //   return NextResponse.json({ ok: false, error: "Generate between 1 and 20 questions per request." }, { status: 400 });
+    // }
 
     const questions = await generateQuestions({ topic, difficulty, numQuestions, isTranslationEnabled });
     return NextResponse.json({ ok: true, questions }, { status: 200 });

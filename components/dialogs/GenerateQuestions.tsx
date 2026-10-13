@@ -61,10 +61,10 @@ const GenerateQuestions = ({ quizId, isTranslationEnabled }: GenerateQuestionsPr
       setFormError("Select a difficulty level.");
       return;
     }
-    if (!Number.isInteger(numQuestions) || numQuestions < 1 || numQuestions > 20) {
-      setFormError("Choose between 1 and 20 questions.");
-      return;
-    }
+    // if (!Number.isInteger(numQuestions) || numQuestions < 1 || numQuestions > 20) {
+    //   setFormError("Choose between 1 and 20 questions.");
+    //   return;
+    // }
     setIsGenerating(true);
     setFormError("");
     try {
